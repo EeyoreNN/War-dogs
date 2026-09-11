@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { site } from "@/config/site";
+import { JsonLd } from "@/components/site/json-ld";
+import { LiveRegion } from "@/components/ui/live-region";
+import { Toaster } from "@/components/ui/toast";
 import "./globals.css";
 
 const saira = localFont({
@@ -45,6 +48,8 @@ export const metadata: Metadata = {
   },
   description: site.description,
   applicationName: site.name,
+  alternates: { canonical: "/" },
+  manifest: "/manifest.webmanifest",
   keywords: ["Wardogs", "tactical map", "Discord activity", "war room", "RCON", "server admin"],
   openGraph: {
     type: "website",
@@ -61,7 +66,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
-    apple: "/apple-icon.png",
+    apple: "/apple-icon",
   },
 };
 
@@ -72,6 +77,27 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+const webSiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: site.name,
+  url: site.url,
+};
+
+const softwareJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: site.name,
+  url: site.url,
+  applicationCategory: "GameApplication",
+  operatingSystem: "Web",
+  offers: { "@type": "Offer", price: 0, priceCurrency: "USD" },
+  isAccessibleForFree: true,
+  author: { "@type": "Organization", name: "wardogs.tech community" },
+};
+
+// No skip link here: each route-group layout renders its own (§3.14), so app routes are never
+// left with a dead `#main` target.
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -79,13 +105,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${saira.variable} ${barlow.variable} ${jetbrains.variable} dark h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-bg text-fg">
-        <a
-          href="#main"
-          className="sr-only rounded bg-accent px-3 py-2 font-semibold text-accent-ink focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:ring-accent"
-        >
-          Skip to content
-        </a>
         {children}
+        <Toaster />
+        <LiveRegion />
+        <JsonLd data={webSiteJsonLd} />
+        <JsonLd data={softwareJsonLd} />
       </body>
     </html>
   );
