@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CODE_ERROR, formatRelativeTime, resolveCodeRoute } from "./logic";
-import { forgetRoom, listRecentRooms } from "./room-api.stub";
+import { forgetRoom, listRecentRooms } from "@/lib/storage/rooms";
 
 describe("resolveCodeRoute", () => {
   it("routes a valid code to /room/<CODE>, uppercased and stripped", () => {
@@ -30,7 +30,7 @@ describe("formatRelativeTime", () => {
   });
 });
 
-describe("recent rooms stub", () => {
+describe("recent rooms (WP1 storage, as the Rejoin card uses it)", () => {
   const room = (code: string, updatedAt: number) => ({
     code,
     team: "Lonestar",

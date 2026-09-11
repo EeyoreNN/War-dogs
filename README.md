@@ -83,9 +83,15 @@ docker run -p 8787:8787 \
   wardogs-relay
 ```
 
-Run it on any Docker host (Fly, Railway, a VPS) behind TLS, then set
-`NEXT_PUBLIC_RELAY_URL=wss://relay.example.com` on Vercel and redeploy. `GET /healthz` is the
-health check. Without a relay the site still works: rooms sync between tabs of one browser.
+Locally, `npm run dev:relay` (or `docker compose up relay`) starts the relay on :8787. Deploy
+`server/Dockerfile` to any Docker host (Fly, Railway, a VPS) behind TLS, then set
+`NEXT_PUBLIC_RELAY_URL=wss://relay.example.com` on Vercel, list the site origin plus
+`https://<client id>.discordsays.com` in `RELAY_ALLOWED_ORIGINS` (comma list; `*` for dev) and
+redeploy. Env: `RELAY_PORT` (falls back to `PORT`, then 8787), `RELAY_ALLOWED_ORIGINS`,
+`RELAY_MAX_ROOMS` (2000), `RELAY_IDLE_HOURS` (6). Health: `GET /healthz`. Self-hosters can point
+one browser at a relay with `localStorage.setItem("wardogs:relay", "ws://host:8787")` (`"off"`
+forces LOCAL; in production only the configured relay origin is allowed by the CSP). Without a
+relay the site still works: rooms sync between tabs of one browser.
 
 ## Discord app and Activity setup
 

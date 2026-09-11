@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { resolveCodeRoute } from "./logic";
-import { normalizeCode } from "./room-api.stub";
+import { normalizeCode } from "@/lib/room/code";
 
 export interface CodeFieldProps {
   id: string;

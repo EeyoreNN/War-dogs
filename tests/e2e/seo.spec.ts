@@ -47,8 +47,13 @@ test.describe("seo", () => {
   test("noindex on room routes, /add and the 404", async ({ page }) => {
     for (const path of ["/room/ABC234", "/add", "/this-does-not-exist"]) {
       await page.goto(path);
-      const robots = await page.locator('meta[name="robots"]').getAttribute("content");
-      expect(robots, path).toMatch(/noindex/);
+      // Next adds its own `noindex` meta on not-found routes next to the §6.1 metadata one;
+      // every robots meta on the page must say noindex, and there must be at least one.
+      const robots = await page
+        .locator('meta[name="robots"]')
+        .evaluateAll((els) => els.map((el) => el.getAttribute("content") ?? ""));
+      expect(robots.length, path).toBeGreaterThanOrEqual(1);
+      for (const content of robots) expect(content, path).toMatch(/noindex/);
     }
   });
 

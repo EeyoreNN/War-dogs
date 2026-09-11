@@ -109,9 +109,11 @@ test.describe("home", () => {
     await page.goto("/");
     await field.fill("ab0");
     await field.press("Enter");
-    await expect(page.getByRole("alert")).toHaveText(
-      "Codes are 6 letters or digits, never 0, O, 1 or I.",
-    );
+    // The field's own error element, not Next's route announcer (also role=alert).
+    const error = page.locator("#hero-code-error");
+    await expect(error).toHaveAttribute("role", "alert");
+    await expect(error).toHaveText("Codes are 6 letters or digits, never 0, O, 1 or I.");
+    await expect(field).toHaveAttribute("aria-describedby", "hero-code-error");
     await expect(page).toHaveURL(/\/$/);
   });
 

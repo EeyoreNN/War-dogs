@@ -6,7 +6,8 @@ import { X } from "lucide-react";
 import { Card, CardEyebrow } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatRelativeTime } from "./logic";
-import { forgetRoom, listRecentRooms, type RecentRoom } from "./room-api.stub";
+import type { RecentRoom } from "@/lib/map/types";
+import { forgetRoom, listRecentRooms } from "@/lib/storage/rooms";
 
 const MAX_ROWS = 3;
 const EMPTY: RecentRoom[] = [];

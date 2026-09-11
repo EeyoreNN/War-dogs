@@ -1,4 +1,4 @@
-import { isReservedCode, isRoomCode, normalizeCode } from "./room-api.stub";
+import { isReservedCode, isRoomCode, normalizeCode } from "@/lib/room/code";
 
 export const CODE_ERROR = "Codes are 6 letters or digits, never 0, O, 1 or I.";
 

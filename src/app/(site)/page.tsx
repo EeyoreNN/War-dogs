@@ -18,9 +18,6 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
-      <noscript>
-        <style>{`[data-rise]{opacity:1!important;translate:none!important}`}</style>
-      </noscript>
       <Hero />
       <HowItWorks />
       <ExitCards />
