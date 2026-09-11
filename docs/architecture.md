@@ -94,8 +94,9 @@ must stay off the home page).
 
 ## Testing
 
-- Unit: vitest + Testing Library (jsdom; `vitest.setup.ts` installs Node's webcrypto). Pure
-  engines aim at ≥ 90 % line coverage as a review criterion.
+- Unit: vitest + Testing Library (jsdom; `vitest.setup.ts` installs Node's webcrypto). Every pure
+  engine under `src/lib/<domain>` ships with a unit test next to it; no coverage provider is
+  installed, so review by reading the test, not a percentage.
 - E2E: Playwright, projects `desktop` and `mobile` (Pixel 7). `playwright.config.ts` starts a
   production `next start` and the relay, so the relay half of `sync.spec` needs no Docker.
 - CI (`.github/workflows/ci.yml`): check → build (+ bundle budget) → e2e, and a relay Docker

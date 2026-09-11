@@ -7,7 +7,8 @@ has to be true in the browser, and every route has to work with `npm run dev` al
 
 - Read `CLAUDE.md` (project conventions) and skim `docs/SPEC.md` — the spec is the source of truth
   for copy, contracts and page behaviour.
-- **No new dependencies.** Everything needed is installed; prefer what is there.
+- **Prefer what is installed.** A new dependency needs a reason stated in the PR (the same rule as
+  `CLAUDE.md`); most of what you need is already there.
 - No copyrighted game assets: no map art, no screenshots of the game or of other sites. Map imagery
   is procedurally generated in-app.
 - Read from `src/config/site.ts`; never hardcode the domain, invite link or contact address.

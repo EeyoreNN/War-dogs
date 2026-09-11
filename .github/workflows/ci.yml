@@ -82,7 +82,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -f server/Dockerfile -t wardogs-relay .
+      - run: docker run -d -p 8787:8787 -e RELAY_ALLOWED_ORIGINS='*' --name relay wardogs-relay
+      # Poll instead of a fixed sleep: a cold runner can take longer than 3 s to bind the port.
       - run: |
-          docker run -d -p 8787:8787 -e RELAY_ALLOWED_ORIGINS='*' --name relay wardogs-relay
-          sleep 3
-          curl -fsS http://127.0.0.1:8787/healthz
+          for i in $(seq 1 15); do
+            curl -fsS http://127.0.0.1:8787/healthz && exit 0
+            sleep 1
+          done
+          echo "relay did not answer /healthz in 15 s"
+          exit 1
+      - if: failure()
+        run: docker logs relay

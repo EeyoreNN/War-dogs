@@ -56,6 +56,8 @@ public.
 | `NEXT_PUBLIC_RELAY_URL`         | site  | `ws://` or `wss://` origin of the relay. Unset: LOCAL mode. Its origin is added to the production CSP `connect-src`; a `wardogs:relay` localStorage override pointing elsewhere is blocked by design. |
 | `RELAY_PORT`                    | relay | Port the relay listens on (default `8787`).                                                                                                                                                           |
 | `RELAY_ALLOWED_ORIGINS`         | relay | Comma-separated origins allowed to connect: the site origin and, for the Activity, `https://<client id>.discordsays.com`. `*` for local development only.                                             |
+| `RELAY_MAX_ROOMS`               | relay | Rooms kept in memory before new ones are refused (default `2000`).                                                                                                                                    |
+| `RELAY_IDLE_HOURS`              | relay | Hours a room may sit idle before the relay drops it (default `6`).                                                                                                                                    |
 
 Site-wide branding (name, links, teams, maps, version, legal dates) lives in `src/config/site.ts`.
 To rebrand or repoint a fork, edit that file and the env vars above; nothing else hardcodes the
