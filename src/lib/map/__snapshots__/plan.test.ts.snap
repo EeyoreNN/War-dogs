@@ -1,0 +1,28 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`plan > planToText for the demo seed matches the snapshot 1`] = `
+"**WAR ROOM DEMO · LONESTAR · ZESTAFONA · DEFAULT ZONE** — 1970-01-01 00:05 UTC
+
+__FRIENDLY__
+• FOB "FOB DELTA" at B9
+• RALLY "RALLY" at D7
+• LZ "LZ BRAVO" at E6
+• OBJ "DEFAULT" at F5
+
+__ENEMY__
+• FOB "AUSTIN" · VALKYRA at I3
+• TROOPS "CHICAGO" · MANTICORE at G4
+
+__MARKS__
+• DANGER "MG NEST" at F5 (r 5.0 % of map)
+
+__NOTES__
+• "Hold the ridge" at E4
+
+__OPEN REQUESTS__
+• Ammo · by Ossian · at D7 · claimed by Krieger (ETA 60 s) · open 1 min
+• Fuel · by Boston · at E6 · open 1 min
+• Medical (URGENT) · by Rook · at F5 · open 50 s
+
+Ink: 2 strokes, 1 shape · wardogs.tech"
+`;

@@ -1,0 +1,17 @@
+# `docker compose up relay` runs the relay the way `npm run dev:relay` does (§7.7).
+# Point the site at it with NEXT_PUBLIC_RELAY_URL=ws://localhost:8787 and list the site origin
+# (plus https://<clientId>.discordsays.com for the Discord Activity) in RELAY_ALLOWED_ORIGINS.
+services:
+  relay:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    image: wardogs-relay
+    ports:
+      - "8787:8787"
+    environment:
+      RELAY_PORT: "8787"
+      RELAY_ALLOWED_ORIGINS: "${RELAY_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}"
+      RELAY_MAX_ROOMS: "2000"
+      RELAY_IDLE_HOURS: "6"
+    restart: unless-stopped
