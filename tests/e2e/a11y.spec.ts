@@ -17,8 +17,31 @@ const ROUTES = [
   "/map-guide",
   "/demo/admin",
   "/demo/admin/live",
+  "/demo/admin/rotation",
+  "/demo/admin/history",
+  "/demo/admin/bans",
+  "/demo/admin/audit",
+  "/activity",
   "/room/ABC234",
 ];
+
+/** Seed an identity so `/room/[code]` renders the war room, not the callsign gate. */
+async function seedIdentity(page: Page) {
+  await page.addInitScript(() => {
+    if (!localStorage.getItem("wardogs:identity")) {
+      localStorage.setItem(
+        "wardogs:identity",
+        JSON.stringify({
+          v: 1,
+          client: "wd_A11YA11YA11Y",
+          callsign: "Auditor",
+          focus: null,
+          ink: "blue",
+        }),
+      );
+    }
+  });
+}
 
 /**
  * Structural accessibility audit run inside the page (§7.2 #10) through WP3's self-contained
@@ -49,23 +72,34 @@ test.describe("a11y", () => {
     await expect(page.locator("#main")).toBeVisible();
   });
 
-  test("every focusable element on the home page shows a focus ring", async ({ page }) => {
-    await page.goto("/");
-    const missing = await page.evaluate(() => {
-      const out: string[] = [];
-      const els = document.querySelectorAll<HTMLElement>(
-        "a[href], button, input, [tabindex='0'], summary",
-      );
-      for (const el of els) {
-        el.focus({ preventScroll: true });
-        if (document.activeElement !== el) continue;
-        const cs = getComputedStyle(el);
-        if (cs.outlineStyle === "none" && !cs.boxShadow.includes("rgb")) {
-          out.push(`${el.tagName.toLowerCase()}:${(el.textContent ?? "").trim().slice(0, 24)}`);
+  // §7.2 #10: the visible-focus assertion runs on `/room/[code]` (every control, including the
+  // NodeList options) and on the home page.
+  for (const path of ["/room/ABC234", "/demo", "/"]) {
+    test(`every focusable element on ${path} shows a focus ring`, async ({ page }) => {
+      await seedIdentity(page);
+      await page.goto(path, { waitUntil: "load" });
+      // The map app is a lazy chunk: wait for its root before probing.
+      if (path !== "/") await page.locator('[data-bundle="wd:map-app"]').waitFor();
+      // One real key press puts Chromium's :focus-visible heuristic into keyboard mode, so the
+      // programmatic focus() calls below match `:focus-visible` (they may not on a page whose
+      // script has already dispatched pointer activity, e.g. the demo director).
+      await page.keyboard.press("Tab");
+      const missing = await page.evaluate(() => {
+        const out: string[] = [];
+        const els = document.querySelectorAll<HTMLElement>(
+          "a[href], button, input, select, textarea, [tabindex='0'], [role='option'], summary",
+        );
+        for (const el of els) {
+          el.focus({ preventScroll: true });
+          if (document.activeElement !== el) continue;
+          const cs = getComputedStyle(el);
+          if (cs.outlineStyle === "none" && !cs.boxShadow.includes("rgb")) {
+            out.push(`${el.tagName.toLowerCase()}:${(el.textContent ?? "").trim().slice(0, 24)}`);
+          }
         }
-      }
-      return out;
+        return out;
+      });
+      expect(missing).toEqual([]);
     });
-    expect(missing).toEqual([]);
-  });
+  }
 });

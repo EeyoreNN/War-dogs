@@ -82,7 +82,7 @@ export function Tabs({
             onKeyDown={(e) => onKeyDown(e, i)}
             className={cn(
               "-mb-px inline-flex items-center gap-1.5 border-b-2 border-transparent px-3 font-mono tracking-[0.14em] text-fg-muted uppercase transition-colors hover:text-fg aria-selected:border-accent aria-selected:text-fg",
-              size === "sm" ? "h-8 text-[11px]" : "h-10 text-[12px]",
+              size === "sm" ? "h-8 text-[11px] pointer-coarse:min-h-10" : "h-10 text-[12px]",
             )}
           >
             {item.label}

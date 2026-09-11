@@ -1,18 +1,21 @@
 # Accessibility checklist
 
 Manual checklist for wardogs.tech (spec §7.4). The automated parts live in
-`src/lib/a11y/contrast.test.ts` (unit), `tests/e2e/a11y.spec.ts` (structural audit on every route,
-skip link, visible focus) and the component tests for `Dialog`, `Tabs`, `Sheet`, `CodeInput` and
-`CopyButton`. Tick the rest by hand before a release.
+`src/lib/a11y/contrast.test.ts` (unit), `tests/e2e/a11y.spec.ts` (structural audit on every route
+including `/activity` and the five dashboard tabs, skip link, visible focus on `/`, `/demo` and
+`/room/[code]` down to the NodeList options) and the component tests next to `Button`, `Dialog`,
+`Tabs`, `Sheet`, `CodeInput`, `CopyButton`, `LiveRegion` and `Toast` under `src/components/ui/`.
+Tick the rest by hand before a release.
 
 ## Structure
 
 - [ ] Landmarks on every route: `header`, `nav` (labelled), `main`, `footer`; docs pages add
       `aside` for the TOC.
 - [ ] Exactly one `h1` per route; headings nest without skipping levels.
-- [ ] Skip link is the first focusable element: **Skip to content** → `#main` on site and admin
-      routes, **Skip to map** → `#map` on app routes. The root layout has none, so no route is
-      left with a dead target.
+- [ ] Skip link is the first focusable element: **Skip to content** → `#main` in every route
+      group (`/create` and `/join` have no map, so the `(app)` layout never links to `#map`); a
+      **Skip to map** link belongs to the map app itself, once the map exists. The root layout
+      has none, so no route is left with a dead target.
 - [ ] Every icon-only button has an `aria-label`; every decorative SVG is `aria-hidden`.
 - [ ] Forms: every control has a label; helper and error text are wired with `aria-describedby`;
       invalid fields set `aria-invalid`; errors use `role="alert"`.

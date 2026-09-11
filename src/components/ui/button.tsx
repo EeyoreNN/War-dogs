@@ -22,15 +22,17 @@ const variants: Record<ButtonVariant, string> = {
   /* 40 x 40 ghost tool button; `active` -> amber wash + a 2 px left accent rule */
   icon: "text-fg-muted hover:bg-bg-2 hover:text-fg aria-pressed:bg-accent-soft aria-pressed:text-accent aria-pressed:shadow-[inset_2px_0_0_var(--accent)]",
   /* h-8 filter chip; `active` (selected) -> solid amber */
-  chip: "h-8 rounded-sm border border-line-strong bg-bg-1 px-3 font-mono text-[11px] font-medium tracking-[0.14em] text-fg-muted hover:border-line-hi hover:text-fg aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-accent-ink",
+  chip: "h-8 pointer-coarse:min-h-10 rounded-sm border border-line-strong bg-bg-1 px-3 font-mono text-[11px] font-medium tracking-[0.14em] text-fg-muted hover:border-line-hi hover:text-fg aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-accent-ink",
 };
 
-/* md is 40 px with a pointer, 44 px on touch; icon is the 40 px rail size */
+/* md is 40 px with a pointer, 44 px on touch; icon is the 40 px rail size. Every size keeps the
+   40 px minimum touch target on coarse pointers (§2), including sm / chip rows and the `h-8 w-8`
+   icon overrides in panels: `min-*` survives a `h-8` override. */
 const sizes: Record<ButtonSize, string> = {
-  sm: "h-8 px-3 text-[11px]",
+  sm: "h-8 px-3 text-[11px] pointer-coarse:min-h-10",
   md: "h-10 px-5 text-[13px] pointer-coarse:min-h-11",
   lg: "h-13 px-7 text-[14px]",
-  icon: "h-10 w-10 p-0",
+  icon: "h-10 w-10 p-0 pointer-coarse:min-h-10 pointer-coarse:min-w-10",
 };
 
 function resolveSize(variant: ButtonVariant, size: ButtonSize): ButtonSize {

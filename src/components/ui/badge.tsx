@@ -8,7 +8,8 @@ const tones: Record<BadgeTone, string> = {
   accent: "border-accent/40 bg-accent-soft text-accent",
   muted: "border-line-strong bg-bg-2 text-fg-muted",
   ok: "border-ok/40 bg-ok/10 text-ok",
-  danger: "border-danger/40 bg-danger/10 text-danger",
+  // 11 px text on the tinted ground needs --danger-text (6.1:1), not --danger (§2.3).
+  danger: "border-danger/40 bg-danger/10 text-danger-text",
   info: "border-info/40 bg-info/10 text-info",
   warn: "border-warn/40 bg-warn/10 text-warn",
   team: "border-line-strong bg-bg-2 text-fg",
