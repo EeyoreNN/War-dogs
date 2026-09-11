@@ -216,3 +216,79 @@ https: wss:` as already specified — nothing new. For local dev QA it helps to 
 - Delete `src/components/console/validate.stub.ts` and `config-template.stub.ts` in Phase 2
   (replace with `@/lib/config-ini/validate` and `fs.readFile` in the page).
 - OG terrain crop (deviation 1).
+
+## Phase 2 — integration fixes
+
+Merged `claude/wardogs-clone-improvement-agc9oe` (no conflicts), `npx next typegen`. Gates in the
+worktree: `npm run lint`, `npm run typecheck`, `npm run test` (55 files / 325 tests), `npm run
+build` — green. E2E on the integrated build in this worktree: `PORT=3104 PW_NO_BUILD=1 npm run
+e2e -- tests/e2e/admin.spec.ts tests/e2e/console.spec.ts` → **12 passed** (6 tests × desktop +
+mobile; port 8787 was free so the relay started normally).
+
+### Done
+
+1. **`src/app/(site)/rcon-api/page.tsx`** on WP5's real `DocsShell` (eyebrow `Dev hub`, the
+   unofficial line, H1 `API Console`, the §4.9 lede, `toc={[]}`, `updated` / `version` from
+   `getSpec().info`), metadata per §3.14 (title, the route-map description, canonical
+   `/rcon-api`). The page reads `src/content/ServerSettings.ini` with `fs` and passes it as
+   `configText` to `ConsoleLoader` → `ApiConsole`. Builds static (`○ /rcon-api`).
+2. **Stubs deleted**: `src/components/console/validate.stub.ts` and `config-template.stub.ts`;
+   the console imports `validateIni` from `@/lib/config-ini/validate` and threads `configText`
+   into the text/plain example bodies (`initialBody(e, configText)`).
+3. **OG route** `(admin)/demo/admin/opengraph-image.tsx` is WP2's one-liner
+   (`renderOg(OG_PRESETS.admin)` with the five exports repeated). Verified: 200 `image/png`,
+   218 kB, and `/demo/admin` links it via `og:image`.
+4. **Identity over `@/lib/storage`**: `src/lib/admin-sim/identity.ts` is now a thin adapter
+   (`loadIdentity` / `saveIdentity` / `generateCallsign` / `readJson(KEY_PREFS)` /
+   `savePrefs`). Kept (not deleted) because two dashboard needs sit outside WP1's helpers: an
+   identity may have an empty callsign until the visitor types one (the audit needs a name, so
+   the adapter fills in `Operator XXXX` and saves it), and `showRcon` must default to **true**
+   (§4.8: the sheet opens automatically until "Don't show automatically" is ticked) while
+   `DEFAULT_PREFS.showRcon` is `false`. Command ids come from `newId()` (`@/lib/map/ids`);
+   `newCommandId` is an alias. `bridge.test.ts` rewritten against the WP1 shapes
+   (`wd_…` client ids, `resetIdentityCache`).
+5. **Bugs from the integrated e2e run**:
+   - `/demo/admin` H1 now has `{" "}` before each `<br />` → the accessible name is
+     `Run a Wardogs server from one dashboard`.
+   - The "What this sends" locators are exact (`getByText("POST", { exact: true })`, the path
+     `<code>` likewise) — the sheet content was right; the badge plus the three snippet `<pre>`s
+     all contained the substring.
+   - **Ban test root cause**: the non-modal sheet stayed open when switching tabs and sat over
+     the Bans table's right-aligned `Unban` column, so the click was intercepted for 60 s. Fix:
+     `openSheet` records the pathname it opened on and `RconSheet` only shows it on that tab
+     (`sheet.path === usePathname()`), so moving to another tab never leaves it covering that
+     tab's controls. On phones the sheet is nearly full width and covers the nav, so the spec
+     closes it first there (`viewport < 1024`) and asserts it is hidden after the switch on both.
+     The ban call is `POST /v1/bans` (spec `BanRequest`), and the spec now asserts that.
+   - **390 px roster card** (`LiveServerCard`, landing + live tab): the table drops its
+     `min-w-[420px]` below `sm` and hides the Faction column (`hidden sm:table-cell`; the team
+     dot already colours the row), so the five rows fit inside the card. The full players table
+     on `/demo/admin/live` keeps `min-w-[720px]` inside `overflow-x-auto` (§2.9 allows tables to
+     scroll); the other four tabs report no element wider than 390.
+   - **`/rcon-api` at 390 px** overflowed by 12 px inside `DocsShell`: `.docs-prose` list and
+     `code` styles leaked into the endpoint nav (bullets, boxed paths) and the nav grid item had
+     no `min-w-0`. The console root and skeleton are `not-prose`; the nav is `min-w-0`.
+6. Visual QA (1440×900 and 390×844, `scrollshoot.mjs`) for `/demo/admin`, the five tabs and
+   `/rcon-api`: no horizontal overflow anywhere; shots under
+   `…/scratchpad/build/shots-admin2/`.
+
+### Not done
+
+- `tests/e2e/og.spec.ts` (WP2) fails for every **nested** OG route on this Next version
+  (`/demo/opengraph-image`, `/dev/…`, `/demo/admin/…`, `/room/…`, `/create/…`, `/join/…` → 404):
+  Next 16 emits static nested image routes with a hash suffix (`/demo/admin/opengraph-image-zdjxga`)
+  and the pages' `og:image` metadata points at the hashed URL, which serves the PNG. Only
+  `/opengraph-image` and `/twitter-image` at the root keep the plain path. My route file is
+  exactly the prescribed one-liner; the fix belongs in the spec (see requests).
+- `sessions` still ignore kicks/bans (Phase 1 deviation 6) — unchanged.
+
+### Requests to other packages
+
+- **WP2 — `tests/e2e/og.spec.ts`**: resolve each route's image URL from the page's
+  `<meta property="og:image">` (or `app-path-routes-manifest.json`) instead of the literal
+  `…/opengraph-image` path, or export `generateImageMetadata` / make the routes dynamic so the
+  path is stable. Every nested OG route 404s on the literal path today.
+- **WP1 — `src/lib/storage/prefs.ts`**: `DEFAULT_PREFS.showRcon` should be `true` (§4.8: the
+  sheet opens automatically by default; the checkbox is "Don't show automatically"). The admin
+  adapter works around it by reading the raw pref; flipping the default lets it call
+  `loadPrefs().showRcon` directly.
