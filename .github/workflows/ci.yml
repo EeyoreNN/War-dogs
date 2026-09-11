@@ -4,6 +4,8 @@ concurrency: { group: ci-${{ github.ref }}, cancel-in-progress: true }
 env:
   # One value for build and e2e: NEXT_PUBLIC_* is baked in at build time.
   NEXT_PUBLIC_SITE_URL: "http://127.0.0.1:3100"
+  # The production CSP only admits this relay origin; the e2e job starts a relay on 8787.
+  NEXT_PUBLIC_RELAY_URL: "ws://127.0.0.1:8787"
 jobs:
   check:
     runs-on: ubuntu-latest

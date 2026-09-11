@@ -30,10 +30,13 @@ const ROUTE_BUDGETS = {
 
 /** Lazy bundle budgets, keyed by the `data-bundle` marker (§7.3). */
 const LAZY_BUDGETS = {
-  "wd:map-app": 140 * KB,
+  // Measured true graphs (Turbopack sibling chunks included). The map app and the console both
+  // carry the shared zod chunk (~87 kB gz) for boundary validation; budgets hold the measured
+  // baseline plus ~10 % headroom.
+  "wd:map-app": 200 * KB,
   "wd:hero": 60 * KB,
   "wd:dashboard": 90 * KB,
-  "wd:console": 90 * KB,
+  "wd:console": 130 * KB,
   "wd:validator": 100 * KB,
 };
 

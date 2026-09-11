@@ -33,7 +33,11 @@ export default defineConfig({
       url: `http://127.0.0.1:${port}`,
       // Canonical/sitemap/robots URLs are inlined at build time; point them at the test server
       // unless the caller (CI's build job) already pinned NEXT_PUBLIC_SITE_URL.
-      env: { NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? `http://127.0.0.1:${port}` },
+      env: {
+        NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? `http://127.0.0.1:${port}`,
+        // The production CSP only admits the configured relay origin; bake in the relay Playwright starts.
+        NEXT_PUBLIC_RELAY_URL: process.env.NEXT_PUBLIC_RELAY_URL ?? "ws://127.0.0.1:8787",
+      },
       reuseExistingServer: !process.env.CI,
       timeout: 240_000,
     },
