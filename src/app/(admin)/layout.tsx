@@ -1,5 +1,6 @@
 import { AdminStrip } from "@/components/admin/admin-strip";
 import { SimProvider } from "@/components/admin/sim-provider";
+import { Toaster } from "@/components/ui/toast";
 
 /**
  * The admin demo shell (§3.14): its own 48 px strip, no SiteHeader / SiteFooter. One
@@ -19,6 +20,7 @@ export default function AdminLayout({ children }: LayoutProps<"/demo/admin">) {
         <main id="main" className="min-h-dvh flex-1">
           {children}
         </main>
+        <Toaster position="top" />
       </div>
     </SimProvider>
   );

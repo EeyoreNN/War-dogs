@@ -1,7 +1,8 @@
 import { SiteHeader } from "@/components/site/header";
 import { SiteFooter } from "@/components/site/footer";
+import { Toaster } from "@/components/ui/toast";
 
-/** Marketing / docs / legal shell: skip link, header, `#main`, footer, one amber vignette. */
+/** Marketing / docs / legal shell: skip link, header, `#main`, footer, bottom-right toasts, one amber vignette. */
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col vignette">
@@ -16,6 +17,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
         {children}
       </main>
       <SiteFooter />
+      <Toaster />
     </div>
   );
 }

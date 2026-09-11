@@ -58,14 +58,32 @@ const toneRule: Record<ToastTone, string> = {
   danger: "border-l-danger",
 };
 
-/** Mount once in the root layout. `aria-live="off"`: the LiveRegion does the announcing. */
-export function Toaster() {
+export type ToasterPosition = "bottom-right" | "top";
+
+const positionRule: Record<ToasterPosition, string> = {
+  /* marketing pages: out of the way, bottom-right */
+  "bottom-right":
+    "inset-x-4 bottom-4 pb-[env(safe-area-inset-bottom)] sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[360px] sm:items-end",
+  /* app / admin routes (§4.3.8): top centre under the 44–48 px top bar, never over the
+     bottom-right controls, the zoom stack or a right-hand sheet */
+  top: "inset-x-4 top-14 pt-[env(safe-area-inset-top)] sm:inset-x-auto sm:left-1/2 sm:w-[360px] sm:-translate-x-1/2 sm:items-stretch",
+};
+
+/**
+ * Mount once per route-group layout: `(site)` bottom-right, `(app)` / `(admin)` `position="top"`.
+ * `aria-live="off"`: the LiveRegion does the announcing.
+ */
+export function Toaster({ position = "bottom-right" }: { position?: ToasterPosition } = {}) {
   const toasts = useToastStore((s) => s.toasts);
   const dismiss = useToastStore((s) => s.dismiss);
   return (
     <div
       aria-live="off"
-      className="pointer-events-none fixed inset-x-4 bottom-4 z-[90] flex flex-col items-stretch gap-2 pb-[env(safe-area-inset-bottom)] sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[360px] sm:items-end"
+      data-position={position}
+      className={cn(
+        "pointer-events-none fixed z-[90] flex flex-col items-stretch gap-2",
+        positionRule[position],
+      )}
     >
       {toasts.map((t) => (
         <div
