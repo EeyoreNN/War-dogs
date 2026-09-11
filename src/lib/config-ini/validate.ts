@@ -466,7 +466,7 @@ export function validateIni(text: string): IniValidation {
       level: "error",
       code: "network-needs-hash",
       key: "BindAddress",
-      message: `A network listener (BindAddress=${bindValue}) needs PasswordHash; a plaintext Password only works on loopback. Network listener needs PasswordHash.`,
+      message: `Network listener needs PasswordHash: BindAddress=${bindValue} is not loopback, and a plaintext Password only works on loopback.`,
     });
   }
   if (bind && network && rconEnabled) {
@@ -475,7 +475,7 @@ export function validateIni(text: string): IniValidation {
       level: "warning",
       code: "tls-required",
       key: "BindAddress",
-      message: `bEnabled=true on ${bindValue}: the listener will not start without a TLS cert and key. TLS cert and key required.`,
+      message: `TLS cert and key required: bEnabled=true on ${bindValue} will not start without them.`,
     });
   }
 
