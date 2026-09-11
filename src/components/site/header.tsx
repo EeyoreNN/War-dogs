@@ -83,6 +83,9 @@ export function SiteHeader({ className }: { className?: string }) {
   }, [open, setOpen]);
 
   const current = (href: string) => (isCurrentNav(href, pathname, hash) ? "page" : undefined);
+  // Mirrors the hero (§4.1): with no Discord app configured the install CTA would only land on
+  // the setup page, so the header's CTA becomes the demo instead.
+  const configured = Boolean(site.discord.clientId);
 
   return (
     <>
@@ -91,10 +94,16 @@ export function SiteHeader({ className }: { className?: string }) {
         aria-hidden="true"
         className="pointer-events-none absolute top-0 h-2 w-px"
       />
+      {/*
+        The blur lives on a `before:` layer, not on the <header>: `backdrop-filter` (like
+        `transform` / `filter`) makes an element the containing block for `position: fixed`
+        descendants, which is what once shrank the mobile menu to the header's 56 px box. The menu
+        is also rendered as a sibling of the header (below) so no header style can capture it.
+      */}
       <header
         data-scrolled={scrolled || undefined}
         className={cn(
-          "sticky top-0 z-40 border-b border-transparent bg-bg-0/80 backdrop-blur-[12px] transition-colors duration-200 data-scrolled:border-line",
+          "sticky top-0 z-40 border-b border-transparent transition-colors duration-200 before:absolute before:inset-0 before:-z-10 before:bg-bg-0/80 before:backdrop-blur-[12px] before:content-[''] data-scrolled:border-line",
           className,
         )}
       >
@@ -123,22 +132,49 @@ export function SiteHeader({ className }: { className?: string }) {
               <DiscordIcon className="text-[#5865F2]" />
               Our Discord
             </a>
-            <ButtonLink
-              href="/add"
-              variant="secondary"
-              size="sm"
-              className="ml-2 h-10 px-4 text-[12px]"
-            >
-              <DiscordIcon size={16} className="text-[#5865F2]" />
-              Add to Discord
-            </ButtonLink>
+            {configured ? (
+              <ButtonLink
+                href="/add"
+                variant="secondary"
+                size="sm"
+                className="ml-2 h-10 px-4 text-[12px]"
+              >
+                <DiscordIcon size={16} className="text-[#5865F2]" />
+                Add to Discord
+              </ButtonLink>
+            ) : (
+              <ButtonLink
+                href="/demo"
+                variant="secondary"
+                size="sm"
+                className="ml-2 h-10 px-4 text-[12px]"
+              >
+                Try the live demo
+              </ButtonLink>
+            )}
           </nav>
 
           <div className="flex items-center gap-2 lg:hidden">
-            <ButtonLink href="/add" variant="secondary" size="sm" className="h-10 px-3 text-[12px]">
-              <DiscordIcon size={16} className="text-[#5865F2]" />
-              Add
-            </ButtonLink>
+            {configured ? (
+              <ButtonLink
+                href="/add"
+                variant="secondary"
+                size="sm"
+                className="h-10 px-3 text-[12px]"
+              >
+                <DiscordIcon size={16} className="text-[#5865F2]" />
+                Add
+              </ButtonLink>
+            ) : (
+              <ButtonLink
+                href="/demo"
+                variant="secondary"
+                size="sm"
+                className="h-10 px-3 text-[12px]"
+              >
+                Demo
+              </ButtonLink>
+            )}
             <button
               ref={toggle}
               type="button"
@@ -152,45 +188,52 @@ export function SiteHeader({ className }: { className?: string }) {
             </button>
           </div>
         </div>
+      </header>
 
-        {open && (
-          <div
-            id="mobile-nav"
-            className="fixed inset-x-0 top-14 bottom-0 z-50 flex flex-col border-t border-line bg-bg-0/95 backdrop-blur-[12px] lg:hidden"
+      {/* Full-height sheet under the 56 px bar (§2.9); a sibling of <header>, see the note above. */}
+      {open && (
+        <div
+          id="mobile-nav"
+          className="fixed inset-x-0 top-14 bottom-0 z-50 flex flex-col border-t border-line bg-bg-0/95 backdrop-blur-[12px] lg:hidden"
+        >
+          <nav
+            aria-label="Mobile"
+            className="flex flex-1 flex-col overflow-y-auto px-6 py-4 sm:px-10"
           >
-            <nav
-              aria-label="Mobile"
-              className="flex flex-1 flex-col overflow-y-auto px-6 py-4 sm:px-10"
-            >
-              {nav.map((item, i) => (
-                <Link
-                  key={item.href}
-                  ref={i === 0 ? firstLink : undefined}
-                  href={item.href}
-                  aria-current={current(item.href)}
-                  className="rounded-md px-3 py-3 text-[20px] font-medium text-fg hover:bg-bg-1 aria-[current=page]:text-accent"
-                  onClick={() => setOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              ))}
-              <a
-                href={site.links.discord}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-3 rounded-md px-3 py-3 text-[20px] font-medium text-fg hover:bg-bg-1"
+            {nav.map((item, i) => (
+              <Link
+                key={item.href}
+                ref={i === 0 ? firstLink : undefined}
+                href={item.href}
+                aria-current={current(item.href)}
+                className="rounded-md px-3 py-3 text-[20px] font-medium text-fg hover:bg-bg-1 aria-[current=page]:text-accent"
+                onClick={() => setOpen(false)}
               >
-                <DiscordIcon size={20} className="text-[#5865F2]" /> Our Discord
-              </a>
-              <div className="mt-auto pt-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                {item.label}
+              </Link>
+            ))}
+            <a
+              href={site.links.discord}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 rounded-md px-3 py-3 text-[20px] font-medium text-fg hover:bg-bg-1"
+            >
+              <DiscordIcon size={20} className="text-[#5865F2]" /> Our Discord
+            </a>
+            <div className="mt-auto pt-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              {configured ? (
                 <ButtonLink href="/add" variant="primary" size="lg" className="w-full">
                   <DiscordIcon size={18} /> Add to Discord
                 </ButtonLink>
-              </div>
-            </nav>
-          </div>
-        )}
-      </header>
+              ) : (
+                <ButtonLink href="/demo" variant="primary" size="lg" className="w-full">
+                  Try the live demo
+                </ButtonLink>
+              )}
+            </div>
+          </nav>
+        </div>
+      )}
     </>
   );
 }
