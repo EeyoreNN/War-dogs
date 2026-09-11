@@ -67,7 +67,8 @@ export default async function AddPage({ searchParams }: PageProps<"/add">) {
 
   return (
     <section className="relative overflow-hidden py-[clamp(4rem,8vw,7rem)]">
-      <ContourBackdrop />
+      {/* Behind the title block only (§2.5): bounded and faded out before the first body section. */}
+      <ContourBackdrop className="h-[420px] [mask-image:linear-gradient(to_bottom,#000_50%,transparent)]" />
       <Container className="relative max-w-3xl">
         <p className="mb-3 eyebrow">Setup required</p>
         <h1 className="display display-2 text-balance text-fg">

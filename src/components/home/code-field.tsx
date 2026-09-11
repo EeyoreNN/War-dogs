@@ -14,6 +14,11 @@ export interface CodeFieldProps {
   className?: string;
   /** Larger cells for the 404 page. */
   size?: "md" | "lg";
+  /**
+   * `inline` (the hero, §4.1): label, input and submit share one 40 px row from `lg`, so the form
+   * sits beside the secondary buttons instead of stacking two more rows under them.
+   */
+  layout?: "stacked" | "inline";
 }
 
 /**
@@ -21,7 +26,14 @@ export interface CodeFieldProps {
  * Enter goes to `/room/<CODE>`, `/demo` for `DEMO`, otherwise shows the inline error.
  * Without JavaScript it submits as `GET /join?code=` (progressive enhancement).
  */
-export function CodeField({ id, label = "Have a code?", className, size = "md" }: CodeFieldProps) {
+export function CodeField({
+  id,
+  label = "Have a code?",
+  className,
+  size = "md",
+  layout = "stacked",
+}: CodeFieldProps) {
+  const inline = layout === "inline";
   const router = useRouter();
   const [value, setValue] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
@@ -46,14 +58,22 @@ export function CodeField({ id, label = "Have a code?", className, size = "md" }
       method="get"
       noValidate
       onSubmit={onSubmit}
-      className={cn("flex flex-col gap-2", className)}
+      className={cn(
+        "flex flex-col gap-2",
+        inline && "lg:flex-row lg:flex-wrap lg:items-center lg:gap-3",
+        className,
+      )}
     >
       <label htmlFor={id} className="label-mono">
         {label}
       </label>
       <div
         key={shake}
-        className={cn("flex items-stretch gap-2", error && shake > 0 && "animate-shake")}
+        className={cn(
+          "flex items-stretch gap-2",
+          inline && "lg:min-w-0",
+          error && shake > 0 && "animate-shake",
+        )}
       >
         <input
           id={id}
@@ -76,6 +96,7 @@ export function CodeField({ id, label = "Have a code?", className, size = "md" }
           className={cn(
             "min-w-0 flex-1 rounded-md border border-line-strong bg-bg-1 font-mono tracking-[0.3em] text-fg uppercase transition-colors placeholder:tracking-[0.3em] placeholder:text-fg-faint focus:border-accent",
             size === "lg" ? "h-13 px-4 text-lg" : "h-12 px-4 text-[15px]",
+            inline && "lg:h-10 lg:w-32 lg:flex-none lg:px-3 lg:text-[14px]",
             error && "border-danger",
           )}
         />
@@ -85,13 +106,18 @@ export function CodeField({ id, label = "Have a code?", className, size = "md" }
           className={cn(
             "inline-flex shrink-0 items-center justify-center rounded-md border border-line-strong bg-bg-1 text-fg transition-colors hover:border-line-hi hover:bg-bg-2",
             size === "lg" ? "h-13 w-13" : "h-12 w-12",
+            inline && "lg:h-10 lg:w-10",
           )}
         >
           <ArrowRight size={18} aria-hidden="true" />
         </button>
       </div>
       {error ? (
-        <p id={errorId} role="alert" className="text-sm text-danger-text">
+        <p
+          id={errorId}
+          role="alert"
+          className={cn("text-sm text-danger-text", inline && "lg:basis-full")}
+        >
           {error}
         </p>
       ) : null}

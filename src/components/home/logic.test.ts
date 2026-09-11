@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CODE_ERROR, formatRelativeTime, resolveCodeRoute } from "./logic";
+import { CODE_ERROR, resolveCodeRoute } from "./logic";
 import { forgetRoom, listRecentRooms } from "@/lib/storage/rooms";
 
 describe("resolveCodeRoute", () => {
@@ -14,19 +14,6 @@ describe("resolveCodeRoute", () => {
     for (const bad of ["", "ABC", "ABC0DE", "ABCDEFG", "OOOOOO", "111111"]) {
       expect(resolveCodeRoute(bad)).toEqual({ ok: false, error: CODE_ERROR });
     }
-  });
-});
-
-describe("formatRelativeTime", () => {
-  const now = 1_000_000_000;
-  it("buckets seconds, minutes, hours and days", () => {
-    expect(formatRelativeTime(now - 20_000, now)).toBe("just now");
-    expect(formatRelativeTime(now - 12 * 60_000, now)).toBe("12 min ago");
-    expect(formatRelativeTime(now - 3 * 3_600_000, now)).toBe("3 h ago");
-    expect(formatRelativeTime(now - 5 * 86_400_000, now)).toBe("5 d ago");
-  });
-  it("never goes negative for a future timestamp", () => {
-    expect(formatRelativeTime(now + 60_000, now)).toBe("just now");
   });
 });
 

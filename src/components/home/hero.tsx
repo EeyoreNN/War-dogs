@@ -52,7 +52,9 @@ export function Hero() {
               >
                 Not an admin? Add it to your own account instead.
               </Link>
-              <div className="mt-3 grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:justify-center lg:justify-start">
+              {/* Secondary buttons and, beside the join button (§4.1), the inline code form; below
+                  `lg` the form takes its own centred row. */}
+              <div className="mt-3 grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-center lg:w-full lg:justify-start">
                 {configured ? null : (
                   <ButtonLink
                     href="/add"
@@ -80,8 +82,12 @@ export function Hero() {
                   Join a war room
                   <ArrowRight size={16} aria-hidden="true" />
                 </ButtonLink>
+                <CodeField
+                  id="hero-code"
+                  layout="inline"
+                  className="col-span-2 w-full max-w-xs text-left sm:basis-full lg:w-auto lg:max-w-none lg:basis-auto"
+                />
               </div>
-              <CodeField id="hero-code" className="mt-3 w-full max-w-xs text-left" />
               <RecentRooms className="mt-3 w-full max-w-md text-left" />
             </div>
           </div>

@@ -5,8 +5,9 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { Card, CardEyebrow } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { formatRelativeTime } from "./logic";
+import { timeAgo } from "@/lib/format/time";
 import type { RecentRoom } from "@/lib/map/types";
+import { KEY_ROOMS } from "@/lib/storage/keys";
 import { forgetRoom, listRecentRooms } from "@/lib/storage/rooms";
 
 const MAX_ROWS = 3;
@@ -16,7 +17,7 @@ function titleCase(s: string) {
   return s ? s[0]!.toUpperCase() + s.slice(1).toLowerCase() : s;
 }
 
-/* A tiny external store over `wardogs:rooms`, so the list hydrates without a set-state effect. */
+/* A tiny external store over `KEY_ROOMS`, so the list hydrates without a set-state effect. */
 const listeners = new Set<() => void>();
 let cachedRaw: string | null | undefined;
 let cachedRooms: RecentRoom[] = EMPTY;
@@ -24,7 +25,7 @@ let cachedRooms: RecentRoom[] = EMPTY;
 function readRooms(): RecentRoom[] {
   let raw: string | null = null;
   try {
-    raw = localStorage.getItem("wardogs:rooms");
+    raw = localStorage.getItem(KEY_ROOMS);
   } catch {
     raw = null;
   }
@@ -44,15 +45,24 @@ function subscribe(cb: () => void) {
   };
 }
 
+export interface RecentRoomsProps {
+  className?: string;
+  /** Display name for a map id; the home page keeps the id (no `@/config/maps` in its bundle). */
+  mapName?: (id: string) => string;
+}
+
 /**
- * Rejoin card (§4.1): rendered only after hydration and only when this browser has opened a
- * war room before. Nothing is reserved for it, so it never shifts the layout above it.
+ * Rejoin card (§4.1; the same rows on `/join`, §4.5): rendered only after hydration and only when
+ * this browser has opened a war room before. Nothing is reserved for it, so it never shifts the
+ * layout above it. zod-free (§5.4).
  */
-export function RecentRooms({ className }: { className?: string }) {
+export function RecentRooms({ className, mapName = titleCase }: RecentRoomsProps) {
   const rooms = React.useSyncExternalStore(subscribe, readRooms, () => EMPTY);
+  // `now` is a stable 30 s bucket (a snapshot must not change between calls). It rounds up so
+  // `timeAgo`'s floor never under-reports: a room updated 12 min ago reads "12 min ago", not 11.
   const now = React.useSyncExternalStore(
     subscribe,
-    () => Math.floor(Date.now() / 30_000) * 30_000,
+    () => Math.ceil(Date.now() / 30_000) * 30_000,
     () => 0,
   );
 
@@ -82,9 +92,9 @@ export function RecentRooms({ className }: { className?: string }) {
               <span aria-hidden="true">·</span>
               <span>{titleCase(r.team)}</span>
               <span aria-hidden="true">·</span>
-              <span>{titleCase(r.map)}</span>
+              <span>{mapName(r.map)}</span>
               <span aria-hidden="true">·</span>
-              <span className="text-fg-faint">{formatRelativeTime(r.updatedAt, now)}</span>
+              <span className="text-fg-faint">{timeAgo(r.updatedAt, now)}</span>
             </Link>
             <button
               type="button"

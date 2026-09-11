@@ -50,7 +50,8 @@ export function LegalPage({
 }) {
   return (
     <article className="relative overflow-hidden py-[clamp(4rem,8vw,7rem)]">
-      <ContourBackdrop />
+      {/* Behind the title block only (§2.5): bounded and faded out before the first body section. */}
+      <ContourBackdrop className="h-[420px] [mask-image:linear-gradient(to_bottom,#000_50%,transparent)]" />
       <Container className="relative">
         <div className="max-w-[68ch]">
           <p className="mb-3 mono-data text-[12px] tracking-[0.16em] text-fg-muted uppercase">
