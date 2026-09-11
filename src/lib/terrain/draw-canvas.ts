@@ -5,7 +5,7 @@
 import type { Point, Rect } from "../geo";
 import { sampleGrid, type Grid } from "./geometry";
 import { biomePalette, hexToRgb, mix, type BiomePalette } from "./palette";
-import { STYLE, blockEdge, casingColour, levelTint } from "./draw-svg";
+import { STYLE, blockEdge, casingColour, layoutLabels, levelTint } from "./draw-svg";
 import type { Settlement, TerrainModel } from "./types";
 
 /** Any 2D context: a CanvasRenderingContext2D or an OffscreenCanvasRenderingContext2D. */
@@ -18,7 +18,7 @@ function shadeGrid(height: Grid): Grid {
   const r = height.res;
   const d = height.data;
   const out = new Float32Array(r * r);
-  const scale = r * 0.55; // exaggerate relief a little
+  const scale = r * 0.3; // gentle relief; the SVG's band offsets are equally subtle
   for (let j = 0; j < r; j++) {
     for (let i = 0; i < r; i++) {
       const x0 = d[j * r + Math.max(0, i - 1)];
@@ -58,7 +58,7 @@ function paintGround(ctx: Ctx2D, model: TerrainModel, size: number, p: BiomePale
       const band = Math.max(0, Math.min(20, Math.floor(Math.max(h, lowest) / 0.05)));
       const t = tints[band];
       const s = sampleGrid(shade, u, v);
-      const l = 1 + (s - 0.5) * 2 * STYLE.shade * 1.6;
+      const l = 1 + (s - 0.5) * 2 * STYLE.shade;
       const o = (y * size + x) * 4;
       px[o] = Math.min(255, t[0] * l);
       px[o + 1] = Math.min(255, t[1] * l);
@@ -228,26 +228,11 @@ function drawLabels(
   ctx.lineWidth = fs * 0.25;
   ctx.strokeStyle = p.low;
   ctx.fillStyle = p.label;
-  const seen = new Set<string>();
-  const draw = (name: string, x: number, y: number) => {
-    const text = name.toUpperCase();
-    const cx = Math.min(size - fs * 4, Math.max(fs * 4, x));
+  for (const l of layoutLabels(model, size, fs, null)) {
     ctx.globalAlpha = 0.6;
-    ctx.strokeText(text, cx, y);
+    ctx.strokeText(l.name, l.x, l.y);
     ctx.globalAlpha = 0.7;
-    ctx.fillText(text, cx, y);
-  };
-  for (const s of model.settlements) {
-    if (seen.has(s.name)) continue;
-    seen.add(s.name);
-    let maxY = s.center.y;
-    for (const b of s.blocks) maxY = Math.max(maxY, b.y + b.h);
-    draw(s.name, s.center.x * size, Math.min(maxY, s.center.y + 0.03) * size + fs * 1.4);
-  }
-  for (const poi of model.pois) {
-    if (poi.kind === "objective" || seen.has(poi.name)) continue;
-    seen.add(poi.name);
-    draw(poi.name, poi.at.x * size, poi.at.y * size + fs * 1.9);
+    ctx.fillText(l.name, l.x, l.y);
   }
   ctx.globalAlpha = 1;
 }

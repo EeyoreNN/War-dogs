@@ -3,7 +3,13 @@ import type { Point, Rect } from "../geo";
 export const MAP_IDS = ["zestafona", "bakurani", "ozeti"] as const;
 export type MapId = (typeof MAP_IDS)[number];
 
-export const CONTROL_ZONE_IDS = ["default", "small-factory", "water-treatment", "houses", "none"] as const;
+export const CONTROL_ZONE_IDS = [
+  "default",
+  "small-factory",
+  "water-treatment",
+  "houses",
+  "none",
+] as const;
 export type ControlZoneId = (typeof CONTROL_ZONE_IDS)[number];
 export type ZoneAnchorId = Exclude<ControlZoneId, "none">;
 

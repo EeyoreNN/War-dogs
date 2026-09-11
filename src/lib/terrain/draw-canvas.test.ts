@@ -5,11 +5,9 @@ import { mapModel } from "./generate";
 /** A recording 2D context: enough surface for drawTerrain, no rasteriser. */
 function fakeCtx(size: number) {
   const calls: string[] = [];
-  const rec =
-    (name: string) =>
-    (..._args: unknown[]) => {
-      calls.push(name);
-    };
+  const rec = (name: string) => () => {
+    calls.push(name);
+  };
   const ctx = {
     calls,
     globalAlpha: 1,

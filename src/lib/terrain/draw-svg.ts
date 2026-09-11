@@ -373,20 +373,23 @@ function settlementSvg(
     .join("");
 }
 
+export interface LabelSlot {
+  x: number;
+  y: number;
+  name: string;
+}
+
 /**
- * Place names: mono 10 px at 70 %, uppercase, one per distinct name; the objective has no text and
- * the town under an active zone chip is not repeated. Labels that would collide slide to the next
- * free slot (below, above, then further below).
+ * Place-name layout shared by both renderers: mono 10 px (scaled) uppercase, one label per
+ * distinct name; the objective has no text and the town under an active zone chip is not
+ * repeated. Labels that would collide slide to the next free slot (below, above, further below).
  */
-function labelsSvg(
+export function layoutLabels(
   model: TerrainModel,
   size: number,
-  k: number,
-  p: BiomePalette,
+  fs: number,
   skipName: string | null,
-): string {
-  const f = (v: number) => Math.round(v * 10) / 10;
-  const fs = f(Math.max(7, STYLE.label * k));
+): LabelSlot[] {
   const seen = new Set<string>();
   const items: { at: Point; name: string; dy: number }[] = [];
   for (const s of model.settlements) {
@@ -406,10 +409,10 @@ function labelsSvg(
     items.push({ at: poi.at, name: poi.name, dy: fs * 1.9 });
   }
   const placed: { x0: number; y0: number; x1: number; y1: number }[] = [];
-  const texts: string[] = [];
+  const out: LabelSlot[] = [];
   for (const it of items) {
     const width = it.name.length * fs * 0.64 + fs * 0.4;
-    const x = f(Math.min(size - width / 2, Math.max(width / 2, it.at.x * size)));
+    const x = Math.min(size - width / 2, Math.max(width / 2, it.at.x * size));
     const base = it.at.y * size;
     const candidates = [
       base + it.dy,
@@ -430,8 +433,23 @@ function labelsSvg(
       }
     }
     placed.push({ x0: x - width / 2, y0: y - fs, x1: x + width / 2, y1: y + fs * 0.3 });
-    texts.push(`<text x="${x}" y="${f(y)}">${esc(it.name.toUpperCase())}</text>`);
+    out.push({ x, y, name: it.name.toUpperCase() });
   }
+  return out;
+}
+
+function labelsSvg(
+  model: TerrainModel,
+  size: number,
+  k: number,
+  p: BiomePalette,
+  skipName: string | null,
+): string {
+  const f = (v: number) => Math.round(v * 10) / 10;
+  const fs = f(Math.max(7, STYLE.label * k));
+  const texts = layoutLabels(model, size, fs, skipName).map(
+    (l) => `<text x="${f(l.x)}" y="${f(l.y)}">${esc(l.name)}</text>`,
+  );
   return `<g font-family="JetBrains Mono, ui-monospace, Menlo, monospace" font-size="${fs}" letter-spacing="${f(fs * 0.08)}" text-anchor="middle" fill="${p.label}" fill-opacity="0.7" paint-order="stroke" stroke="${p.low}" stroke-opacity="0.6" stroke-width="${f(fs * 0.25)}" stroke-linejoin="round">${texts.join("")}</g>`;
 }
 
