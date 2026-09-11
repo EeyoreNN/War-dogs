@@ -34,7 +34,7 @@ export function SiteHeader({ className }: { className?: string }) {
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [open]);
+  }, [open, setOpen]);
 
   return (
     <header className={cn("relative z-40", className)}>
