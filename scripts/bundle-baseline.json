@@ -1,0 +1,24 @@
+{
+  "measuredAt": "2026-09-11",
+  "how": "node scripts/check-bundle.mjs after `next build` (Next 16.3, React 19, Turbopack): module scripts referenced by the prerendered HTML, gzip level 9; the noModule polyfill chunk is not counted.",
+  "scaffold": {
+    "note": "Phase 0 scaffold: fonts, header, the two-CTA hero placeholder.",
+    "/": 153600,
+    "/_not-found": 136192
+  },
+  "phase1": {
+    "note": "WP6 Phase 1: full home page (skeleton in the hero frame), legal pages. No motion runtime, no zod on the home page.",
+    "/": 156877,
+    "/terms": 158310,
+    "/privacy": 158310
+  },
+  "budgets": {
+    "site": 194560,
+    "app": 204800,
+    "admin": 204800,
+    "wd:map-app": 143360,
+    "wd:hero": 61440,
+    "wd:dashboard": 92160,
+    "wd:console": 92160
+  }
+}

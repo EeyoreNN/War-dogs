@@ -136,7 +136,7 @@ export function CodeInput({
             onPaste={onPaste}
             onFocus={(e) => e.currentTarget.select()}
             className={cn(
-              "h-14 max-w-12 min-w-0 flex-1 rounded-md border border-line-strong bg-bg-1 text-center font-mono text-xl tracking-[0.3em] text-fg uppercase transition-colors outline-none placeholder:text-fg-faint focus:border-accent",
+              "h-14 max-w-12 min-w-0 flex-1 rounded-md border border-line-strong bg-bg-1 text-center font-mono text-xl tracking-[0.3em] text-fg uppercase transition-colors placeholder:text-fg-faint focus:border-accent",
               isInvalid && "border-danger",
             )}
           />
