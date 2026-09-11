@@ -21,11 +21,11 @@ import {
   type Endpoint,
   type Param,
 } from "@/lib/openapi/parse";
+import { validateIni } from "@/lib/config-ini/validate";
 import { cn } from "@/lib/utils";
 import { MethodBadge } from "@/components/admin/method-badge";
 import { Select } from "@/components/admin/select";
 import { SimProvider, useSim } from "@/components/admin/sim-provider";
-import { CONFIG_TEMPLATE } from "./config-template.stub";
 import { SchemaTree } from "./schema-tree";
 import {
   DEFAULT_TARGET,
@@ -36,7 +36,6 @@ import {
   subscribeTarget,
   type ConsoleTarget,
 } from "./target";
-import { validateIni } from "./validate.stub";
 
 /**
  * The API console (§4.9): every endpoint in the spec with a form, a live request preview and a
@@ -84,9 +83,9 @@ function prettyJson(text: string): string {
   }
 }
 
-function initialBody(e: Endpoint): string {
+function initialBody(e: Endpoint, configText: string): string {
   if (!e.body) return "";
-  if (e.body.contentType === "text/plain") return CONFIG_TEMPLATE;
+  if (e.body.contentType === "text/plain") return configText;
   return JSON.stringify(exampleFor(e.body.schema), null, 2);
 }
 
@@ -103,9 +102,10 @@ function initialValues(e: Endpoint): Record<string, string> {
 }
 
 export function ApiConsole({
-  configText = CONFIG_TEMPLATE,
+  configText = "",
   className,
 }: {
+  /** The starter `ServerSettings.ini`; the page reads it with `fs`. Empty in isolated tests. */
   configText?: string;
   className?: string;
 }) {
@@ -140,7 +140,7 @@ function ConsoleInner({ configText, className }: { configText: string; className
   const endpoint = spec.endpoints.find((e) => e.id === selectedId) ?? spec.endpoints[0];
   const form = forms[endpoint.id] ?? {
     values: initialValues(endpoint),
-    body: initialBody(endpoint),
+    body: initialBody(endpoint, configText),
   };
 
   const setTarget = (patch: Partial<ConsoleTarget>) => {
@@ -304,7 +304,7 @@ function ConsoleInner({ configText, className }: { configText: string; className
   const responseSchema = endpoint.responses.find((r) => r.status === "200")?.schema ?? null;
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} data-testid="api-console">
+    <div className={cn("not-prose flex flex-col gap-6", className)} data-testid="api-console">
       {/* Target */}
       <section aria-labelledby="target-heading" className="panel p-4 sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -424,7 +424,7 @@ function ConsoleInner({ configText, className }: { configText: string; className
         {/* Left nav */}
         <nav
           aria-label="Endpoints"
-          className="flex max-h-[70vh] flex-col panel lg:sticky lg:top-16"
+          className="flex max-h-[70vh] min-w-0 flex-col panel lg:sticky lg:top-16"
         >
           <form
             role="search"
@@ -534,7 +534,7 @@ function ConsoleInner({ configText, className }: { configText: string; className
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setBody(initialBody(endpoint))}
+                      onClick={() => setBody(initialBody(endpoint, configText))}
                     >
                       Reset example
                     </Button>

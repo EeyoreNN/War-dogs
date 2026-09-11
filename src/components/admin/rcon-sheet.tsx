@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { CopyButton } from "@/components/ui/copy-button";
@@ -34,6 +35,8 @@ function snippets(call: RconCall) {
  */
 export function RconSheet() {
   const { sheet, closeSheet, state, showRcon, setShowRcon } = useSim();
+  const pathname = usePathname();
+  const open = sheet.open && (sheet.path === null || sheet.path === pathname);
   const [lang, setLang] = React.useState<Lang>("curl");
   // The audit row may have been a pending stub when the sheet opened; read the live one.
   const entry: AuditEntry | null = React.useMemo(() => {
@@ -51,7 +54,7 @@ export function RconSheet() {
     : "";
 
   return (
-    <Sheet open={sheet.open} onClose={closeSheet} side="right" title="What this sends">
+    <Sheet open={open} onClose={closeSheet} side="right" title="What this sends">
       <div className="flex flex-col gap-5 p-4">
         {entry && call ? (
           <>

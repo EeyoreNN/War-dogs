@@ -1,3 +1,4 @@
+import { newId } from "@/lib/map/ids";
 import { boundaryDate, resetBoundary } from "./engine";
 import type { AdminCommand, TimedCommand } from "./types";
 
@@ -16,16 +17,8 @@ export function simKey(nowMs: number): string {
   return `${SIM_KEY_PREFIX}${boundaryDate(nowMs)}`;
 }
 
-/** Ids for commands: time-ordered, unique per tab. */
-export function newCommandId(): string {
-  const rnd =
-    typeof crypto !== "undefined" && "getRandomValues" in crypto
-      ? Array.from(crypto.getRandomValues(new Uint8Array(4)), (b) =>
-          b.toString(16).padStart(2, "0"),
-        ).join("")
-      : Math.random().toString(16).slice(2, 10);
-  return `${Date.now().toString(36)}-${rnd}`;
-}
+/** Ids for commands (§3.4 `newId`, 16 base32 chars from the crypto RNG). */
+export const newCommandId = newId;
 
 function isCommand(v: unknown): v is TimedCommand {
   if (typeof v !== "object" || v === null) return false;

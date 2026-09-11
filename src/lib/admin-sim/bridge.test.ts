@@ -1,8 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createSimBridge, loadCommands, newCommandId, saveCommands, simKey } from "./bridge";
+import { KEY_IDENTITY, KEY_PREFS, resetIdentityCache } from "@/lib/storage";
 import {
-  IDENTITY_KEY,
-  PREFS_KEY,
   generateCallsign,
   loadShowRcon,
   loadVisitor,
@@ -133,64 +132,54 @@ describe("createSimBridge", () => {
 });
 
 describe("identity adapter", () => {
-  it("creates an identity on first use with a generated callsign, then keeps it", () => {
-    expect(generateCallsign()).toMatch(/^Operator [0-9A-F]{4}$/);
+  beforeEach(() => resetIdentityCache());
+
+  it("gives a fresh identity a generated callsign and keeps it", () => {
+    expect(generateCallsign()).toMatch(/^Operator [A-Z2-9]{4}$/);
     const first = loadVisitor();
-    expect(first.v).toBe(1);
-    expect(first.client).toMatch(/^[0-9a-f]{16}$/);
-    expect(first.callsign).toMatch(/^Operator [0-9A-F]{4}$/);
+    expect(first.callsign).toMatch(/^Operator [A-Z2-9]{4}$/);
     expect(loadVisitor()).toEqual(first);
-    const stored = JSON.parse(localStorage.getItem(IDENTITY_KEY)!);
-    expect(stored).toEqual({
-      v: 1,
-      client: first.client,
-      callsign: first.callsign,
-      focus: null,
-      ink: "blue",
-    });
+    const stored = JSON.parse(localStorage.getItem(KEY_IDENTITY)!);
+    expect(stored).toMatchObject({ v: 1, callsign: first.callsign, focus: null, ink: "blue" });
+    expect(stored.client).toMatch(/^wd_[A-HJ-NP-Z2-9]{12}$/);
   });
 
   it("reads a WP1-written identity and saves the callsign without touching other fields", () => {
     localStorage.setItem(
-      IDENTITY_KEY,
+      KEY_IDENTITY,
       JSON.stringify({
         v: 1,
-        client: "abc",
+        client: "wd_ABCDEFGHJKLM",
         callsign: "Reaper",
         focus: "medic",
         ink: "red",
-        extra: 1,
       }),
     );
-    expect(loadVisitor()).toEqual({
-      v: 1,
-      client: "abc",
-      callsign: "Reaper",
-      focus: "medic",
-      ink: "red",
-    });
+    expect(loadVisitor()).toEqual({ callsign: "Reaper" });
     const next = saveCallsign("  Ghost   Nine  ");
     expect(next.callsign).toBe("Ghost Nine");
-    const stored = JSON.parse(localStorage.getItem(IDENTITY_KEY)!);
-    expect(stored).toMatchObject({
-      client: "abc",
+    const stored = JSON.parse(localStorage.getItem(KEY_IDENTITY)!);
+    expect(stored).toEqual({
+      v: 1,
+      client: "wd_ABCDEFGHJKLM",
       callsign: "Ghost Nine",
       focus: "medic",
       ink: "red",
-      extra: 1,
     });
     expect(saveCallsign("   ").callsign).toBe("Ghost Nine");
   });
 
   it("showRcon defaults to true and round-trips inside wardogs:prefs", () => {
     expect(loadShowRcon()).toBe(true);
-    localStorage.setItem(PREFS_KEY, JSON.stringify({ v: 1, grid: true }));
+    localStorage.setItem(KEY_PREFS, JSON.stringify({ v: 1, grid: false }));
     saveShowRcon(false);
     expect(loadShowRcon()).toBe(false);
-    expect(JSON.parse(localStorage.getItem(PREFS_KEY)!)).toEqual({
+    expect(JSON.parse(localStorage.getItem(KEY_PREFS)!)).toMatchObject({
       v: 1,
-      grid: true,
+      grid: false,
       showRcon: false,
     });
+    saveShowRcon(true);
+    expect(loadShowRcon()).toBe(true);
   });
 });

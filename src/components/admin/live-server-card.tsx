@@ -151,14 +151,14 @@ export function LiveServerCard({
 
       {!compact ? (
         <div className="relative mt-6 overflow-x-auto">
-          <table className="w-full min-w-[420px] border-collapse text-left text-sm">
+          <table className="w-full border-collapse text-left text-sm sm:min-w-[420px]">
             <caption className="sr-only">Five of the players on the server right now</caption>
             <thead>
               <tr className="label-mono text-fg-faint">
                 <th scope="col" className="py-2 pr-3 font-medium">
                   Callsign
                 </th>
-                <th scope="col" className="py-2 pr-3 font-medium">
+                <th scope="col" className="hidden py-2 pr-3 font-medium sm:table-cell">
                   Faction
                 </th>
                 <th scope="col" className="py-2 pr-3 text-right font-medium">
@@ -184,7 +184,7 @@ export function LiveServerCard({
                       {p.name}
                     </span>
                   </td>
-                  <td className="py-2 pr-3 text-fg-muted">{p.team}</td>
+                  <td className="hidden py-2 pr-3 text-fg-muted sm:table-cell">{p.team}</td>
                   <td className="py-2 pr-3 text-right mono-data text-fg-muted">{p.pingMs} ms</td>
                   <td className="py-2 text-right mono-data text-fg-muted">
                     {humanDuration(state.now - p.joinedAt)}
