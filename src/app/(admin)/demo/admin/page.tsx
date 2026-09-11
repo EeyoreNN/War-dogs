@@ -72,9 +72,9 @@ export default function AdminDemoPage() {
         </p>
         <p className="mt-4 max-w-[60ch] text-base leading-relaxed text-fg-muted">
           wardogs.tech is building the admin dashboard the official console is not: live control,
-          history that stays, ranks instead of a shared password. This is that dashboard, pointed
-          at a simulated test server that plays King of the Hill around the clock. You open it as
-          a visitor holding the admin role. Nothing you do here reaches a real server or a real
+          history that stays, ranks instead of a shared password. This is that dashboard, pointed at
+          a simulated test server that plays King of the Hill around the clock. You open it as a
+          visitor holding the admin role. Nothing you do here reaches a real server or a real
           player.
         </p>
         <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
@@ -92,7 +92,10 @@ export default function AdminDemoPage() {
         <LiveCardIsland />
       </section>
 
-      <section aria-label="What the dashboard does" className="grid gap-4 pb-12 sm:gap-6 md:grid-cols-3">
+      <section
+        aria-label="What the dashboard does"
+        className="grid gap-4 pb-12 sm:gap-6 md:grid-cols-3"
+      >
         {features.map(({ href, eyebrow, title, body, icon: Icon }) => (
           <LinkCard key={href} href={href} className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
@@ -129,8 +132,8 @@ export default function AdminDemoPage() {
 
       <footer className="border-t border-line py-8">
         <p className="text-sm text-fg-muted">
-          {site.name} is unofficial and not affiliated with {site.game.developer} or {site.game.publisher}. The
-          map is drawn by this site; nothing here is game art.
+          {site.name} is unofficial and not affiliated with {site.game.developer} or{" "}
+          {site.game.publisher}. The map is drawn by this site; nothing here is game art.
         </p>
       </footer>
     </div>

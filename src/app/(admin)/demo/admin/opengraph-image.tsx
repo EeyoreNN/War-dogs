@@ -2,7 +2,8 @@ import { ImageResponse } from "next/og";
 import { markSvg } from "@/lib/brand/mark";
 
 export const runtime = "nodejs";
-export const alt = "Server admin in the same Discord — live players, match history, bans with evidence";
+export const alt =
+  "Server admin in the same Discord — live players, match history, bans with evidence";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -69,7 +70,16 @@ export default function Image() {
         </span>
         <div style={{ width: 60, height: 2, background: "#ffa028" }} />
       </div>
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 4, background: "#ffa028" }} />
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 4,
+          background: "#ffa028",
+        }}
+      />
     </div>,
     size,
   );

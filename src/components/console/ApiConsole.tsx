@@ -313,7 +313,7 @@ function ConsoleInner({ configText, className }: { configText: string; className
               Target
             </h2>
             <div
-              className="mt-2 inline-flex rounded-md border border-line-strong bg-bg-0 p-1"
+              className="mt-2 flex w-full flex-col rounded-md border border-line-strong bg-bg-0 p-1 sm:inline-flex sm:w-auto sm:flex-row"
               role="radiogroup"
               aria-label="Target"
             >
@@ -330,7 +330,7 @@ function ConsoleInner({ configText, className }: { configText: string; className
                   aria-checked={target.mode === mode}
                   onClick={() => setTarget({ mode })}
                   className={cn(
-                    "rounded-sm px-3 py-2 font-mono text-[11px] tracking-[0.14em] uppercase transition-colors",
+                    "rounded-sm px-3 py-2.5 text-center font-mono text-[11px] tracking-[0.14em] uppercase transition-colors sm:py-2",
                     target.mode === mode
                       ? "bg-accent text-accent-ink"
                       : "text-fg-muted hover:text-fg",

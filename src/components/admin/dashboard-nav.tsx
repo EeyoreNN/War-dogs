@@ -26,7 +26,7 @@ export function DashboardNav() {
                 href={t.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative inline-flex h-11 items-center px-3 font-mono text-[12px] tracking-[0.14em] uppercase transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-px after:origin-left after:scale-x-0 after:bg-accent after:transition-transform after:duration-[160ms] hover:text-fg",
+                  "relative inline-flex h-11 items-center px-2.5 font-mono text-[12px] tracking-[0.14em] uppercase transition-colors after:absolute after:inset-x-2.5 after:bottom-0 after:h-px after:origin-left after:scale-x-0 after:bg-accent after:transition-transform after:duration-[160ms] hover:text-fg sm:px-3 sm:after:inset-x-3",
                   active ? "text-fg after:scale-x-100" : "text-fg-muted",
                 )}
               >

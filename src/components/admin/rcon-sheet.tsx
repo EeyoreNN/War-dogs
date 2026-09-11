@@ -91,7 +91,10 @@ export function RconSheet() {
                 />
                 {(["curl", "fetch", "powershell"] as const).map((l) => (
                   <TabPanel key={l} value={l} active={lang} className="mt-3">
-                    <pre className="scrollbar-thin overflow-x-auto rounded-md border border-line bg-bg-0 p-3 font-mono text-[12px] leading-relaxed whitespace-pre text-fg">
+                    <pre
+                      data-testid={`sheet-snippet-${l}`}
+                      className="scrollbar-thin overflow-x-auto rounded-md border border-line bg-bg-0 p-3 font-mono text-[12px] leading-relaxed whitespace-pre text-fg"
+                    >
                       {snip[l]}
                     </pre>
                     <CopyButton
