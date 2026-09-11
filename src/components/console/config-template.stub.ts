@@ -1,0 +1,91 @@
+/*
+ * Phase 1 stand-in for the config text the console's config endpoints serve: the bytes of
+ * `src/content/ServerSettings.ini` (WP5's byte copy). In Phase 2 the /rcon-api page reads the
+ * file with `fs` in its server component and passes it as `configText`; this stub is deleted.
+ */
+export const CONFIG_TEMPLATE = `;===========================================================================
+;  Wardogs Dedicated Server - ServerSettings.ini (starter template)
+;
+;  Unofficial starter from https://wardogs.tech/rcon-reference
+;  Copy this to your server's config location, edit the values, and restart.
+;  Only whitelisted keys are honored; deleted or ";"-commented lines keep
+;  their default. Community-maintained - verify against your host's own docs.
+;===========================================================================
+
+
+[/Script/WDGame.WDGameSession]
+; Name shown in the server browser.
+ServerName=My Wardogs Server
+
+; Join password. Leave empty for an open server.
+ServerPassword=
+
+; Join limits. 0 = no restriction.
+ServerMinPlayerCash=0
+ServerMaxPlayerCash=0
+ServerMinPlayerLevel=0
+ServerMaxPlayerLevel=0
+
+; Sponsor banner. Must be a 1024x256 PNG/JPEG on the server's image allow-list.
+ServerImageURL=
+
+; Reserved slots: a max count, then one +DefaultReservedPlayerIds line per
+; SteamID64. The RCON reserve add/remove commands edit these and persist here.
+MaxReservedSlots=20
+; +DefaultReservedPlayerIds="7656119XXXXXXXXXX"
+
+; Banned players: one +DefaultBannedPlayerIds line per SteamID64.
+; The RCON ban/unban commands edit these and persist here.
+; +DefaultBannedPlayerIds="7656119XXXXXXXXXX"
+
+
+[/Script/Engine.GameSession]
+; Total player slots (clamped by the developer-set min/max).
+MaxPlayers=32
+
+
+[MatchState.PreMatch.WaitingForPlayers.PlayerCount]
+; Players required before pre-match becomes a live match.
+MinimumRequiredPlayers=60
+
+
+[MatchState.Playing.KOTH]
+; Seconds between KOTH score ticks (allowed range ~18-30). Faster ticks pay less.
+ScorePeriod=24
+
+
+[/Script/WDGame.WDGameStateSession]
+; Team balancing: lock joining an overpopulated team once it leads by the threshold.
+bLockOverpopulatedTeamsConfig=true
+OverpopulatedTeamThresholdConfig=2
+
+
+[/Script/WDGame.WDServerMapRotationSettings]
+bEnabled=true
+RotationMode=Ordered
+; One entry per line. Experience="x" for one; Experiences="a+b" for several;
+; Lighting is a lighting scenario; ZoneAlternator is optional (omit for default).
++RotationEntries=(Map="Kavkazi",Experience="Bakurani_KOTH_01",Lighting="DayClear")
+; +RotationEntries=(Map="Europe",Experiences="Madrid_KOTH_01+KOTH_InfantryOnly",Lighting="DayLateGray")
+
+
+[/Script/WDRCON.WDRCONSettings]
+; The RCON admin listener (used by admin tools). Off by default - enable it to connect.
+bEnabled=false
+
+; Bind address. 127.0.0.1 = loopback only, plaintext Password allowed.
+; 0.0.0.0 = all interfaces - REQUIRES a TLS cert + key and PasswordHash to start.
+BindAddress=127.0.0.1
+
+; RCON admin port (default 7776; or use the -RCONPort= launch argument).
+Port=7776
+
+; Plaintext RCON password. If empty, the server generates one each boot and
+; writes it to Saved/RCON/ADMIN-PASSWORD.txt.
+Password=
+
+; Alternative to plaintext: a pre-hashed password from
+;   WardogsServer -GenerateRCONHash=<password>
+; PasswordHash takes precedence over Password when both are set.
+PasswordHash=""
+`;
