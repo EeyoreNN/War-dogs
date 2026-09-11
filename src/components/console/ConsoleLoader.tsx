@@ -6,7 +6,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 /** The two-column console shell while the chunk lands (§4.9). */
 export function ConsoleSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Loading the API console" className="flex flex-col gap-6">
+    <div
+      aria-busy="true"
+      aria-label="Loading the API console"
+      className="not-prose flex flex-col gap-6"
+    >
       <Skeleton className="h-28 w-full" />
       <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
         <Skeleton className="h-[480px]" />

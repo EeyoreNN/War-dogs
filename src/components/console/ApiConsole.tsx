@@ -304,7 +304,7 @@ function ConsoleInner({ configText, className }: { configText: string; className
   const responseSchema = endpoint.responses.find((r) => r.status === "200")?.schema ?? null;
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} data-testid="api-console">
+    <div className={cn("not-prose flex flex-col gap-6", className)} data-testid="api-console">
       {/* Target */}
       <section aria-labelledby="target-heading" className="panel p-4 sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -424,7 +424,7 @@ function ConsoleInner({ configText, className }: { configText: string; className
         {/* Left nav */}
         <nav
           aria-label="Endpoints"
-          className="flex max-h-[70vh] flex-col panel lg:sticky lg:top-16"
+          className="flex max-h-[70vh] min-w-0 flex-col panel lg:sticky lg:top-16"
         >
           <form
             role="search"
