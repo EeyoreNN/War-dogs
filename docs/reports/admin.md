@@ -292,3 +292,35 @@ mobile; port 8787 was free so the relay started normally).
   sheet opens automatically by default; the checkbox is "Don't show automatically"). The admin
   adapter works around it by reading the raw pref; flipping the default lets it call
   `loadPrefs().showRcon` directly.
+
+## Budgets
+
+Measured with `node scripts/check-bundle.mjs` after `next build` (gzip -9, first-load = module
+scripts referenced by the prerendered HTML).
+
+| Route / bundle                    | Before                  | After             | Budget |
+| --------------------------------- | ----------------------- | ----------------- | ------ |
+| `/demo/admin`                     | 257.3 kB (OVER)         | 168.1 kB (ok)     | 200 kB |
+| `/demo/admin/{live,…,audit}` (×5) | 256.8 kB (OVER)         | 167.6 kB (ok)     | 200 kB |
+| `/rcon-api`                       | 157.1 kB (ok)           | 157.1 kB (ok)     | 190 kB |
+| `wd:dashboard` (lazy)             | not present (no marker) | 13.4 kB (1 chunk) | 90 kB  |
+| `wd:console` (lazy)               | not present (no marker) | 11.2 kB (1 chunk) | 90 kB  |
+
+What was wrong: `src/lib/admin-sim/identity.ts` imported the `@/lib/storage` barrel, whose
+`./room` re-export reaches `zod` via `map/schema`; that single edge put an ≈ 87 kB chunk on
+every admin route. It now imports `storage/identity`, `storage/keys`, `storage/local` and
+`storage/prefs` directly. The dashboard was already a separate `dynamic()` chunk behind
+`DashboardLoader` (and the console behind `ConsoleLoader`), but neither rendered the
+`data-bundle` marker, so the script could not find them. `DashboardPanel` now wraps its output in
+`<div data-bundle="wd:dashboard" className="contents">` (skeleton included) and `ApiConsole`'s
+root carries `data-bundle="wd:console"`.
+
+Kept as is: `SimProvider` (engine ≈ 10.7 kB gz) stays in the `(admin)` layout because the strip
+and the landing's live card read the same simulation as the dashboard; the landing therefore
+shares that chunk and lands at 168 kB.
+
+Known gap: the script sums only chunks referenced from inside the entry chunk. Under Turbopack the
+chunk list lives in the parent's async loader, so the true graphs are larger — dashboard ≈ 23 kB
+over 2 chunks, console ≈ 118 kB over 3 chunks (the console statically imports `validateIni`,
+i.e. `zod`, and `http.ts` calls `ctx.validate` synchronously). Making the console's validator
+an async import would bring it under the 90 kB spec figure; left for a follow-up.
