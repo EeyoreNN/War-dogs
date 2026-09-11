@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Callout } from "@/components/ui/callout";
 import { toast } from "@/components/ui/toast";
+import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import MapAppLoader from "@/components/map/MapAppLoader";
 import { site } from "@/config/site";
 import { isInsideDiscord } from "@/lib/realtime/discord-env";
@@ -56,9 +57,16 @@ export function ActivityShell({ children }: { children: React.ReactNode }) {
       </MapAppLoader>
     );
   }
+  // The page heading before the room is known (MapAppLoader owns it once ready).
+  const heading = (
+    <VisuallyHidden as="div">
+      <h1>Discord activity · war room</h1>
+    </VisuallyHidden>
+  );
   if (phase.kind === "unconfigured") {
     return (
       <div className="mx-auto w-full max-w-[640px] px-6 py-16">
+        {heading}
         <Callout tone="warning" title="This instance has no Discord app configured">
           <ol className="list-decimal space-y-2 pl-5">
             <li>Create an application at discord.com/developers/applications.</li>
@@ -85,5 +93,10 @@ export function ActivityShell({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  return <>{children}</>;
+  return (
+    <>
+      {heading}
+      {children}
+    </>
+  );
 }
