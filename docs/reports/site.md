@@ -223,3 +223,55 @@ print` forces visible. `globals.css` hides only `[data-rise="pending"]`; the `<n
   budget (`node scripts/check-bundle.mjs` reports `OVER`); the other `(site)` routes sit at
   154–158 kB, so roughly 90 kB of client code is entering through that page — a `dynamic()`
   import for the heavy client piece should bring it back.
+
+## Phase 3 (integrated build, all six packages)
+
+### Done
+
+- **Real hero wired** (`src/components/home/hero.tsx`, `hero-frame-shell.tsx`): the frame holds
+  `<HeroFrame><HeroStatic /></HeroFrame>` (§4.1, §3.13). The shell is now a server component and
+  draws no chrome of its own: `HeroStatic` / `HeroPlayer` bring the 32 px top bar (mark,
+  `WAR ROOM DEMO`, LIVE pip), `HeroFrame` owns the focusable wrapper (`role="group"`,
+  `tabindex=0`, Enter → `/demo`) and `HeroPlayer` the one _take over_ overlay — the Phase 1
+  duplicates (shell top bar, shell overlay, shell `tabindex`) are gone. `hud-corners` moved to
+  an overlay above the map (its `::before` paints under positioned children); the shell draws the
+  focus ring on itself (`has-[:focus-visible]:outline-*`) because the frame's own outline sits
+  outside its box and is clipped by `overflow-hidden`. Verified on the built page: the terrain
+  `<img>` is server-rendered with `fetchpriority="high" loading="eager"` and the finished plan's
+  markers are in the HTML (the LCP element), the frame's bounding box is identical before and
+  after the player swaps in at 1440 and 390 (no CLS), exactly one _take over_ link, no console
+  errors, `wd:hero` now measured (30.8 kB of 60 kB; 6.9 kB entry + the 23.8 kB shared scene
+  chunk).
+- `tests/e2e/a11y.spec.ts` imports WP3's `auditPage` (`src/lib/a11y/audit`) — same routes, same
+  assertion.
+- `tests/e2e/og.spec.ts` reads `<meta property="og:image">` off `/`, `/demo`, `/dev`,
+  `/demo/admin`, `/room/ABC123`, `/create`, `/join` and asserts that URL is a 200 `image/png`
+  with IHDR 1200 × 630; the root `/opengraph-image` and `/twitter-image` keep their fixed URLs.
+- `scripts/check-bundle.mjs`: `wd:validator` (100 kB) added; lazy bundles now also count the
+  sibling chunks Turbopack names beside the entry in the parent's async loader list
+  (`Promise.all(["static/chunks/…", …].map(l))`), minus chunks the loading page already has in
+  its first-load scripts; the largest cost across parents is reported. `bundle-baseline.json`
+  gains `phase3`.
+- `docs/reports/map-ui.md` fails `prettier --check` on the integrated branch; it is WP3's file and
+  is left alone. `.prettierignore` needs no change (reports are meant to be formatted — the fix is
+  `npx prettier --write docs/reports/map-ui.md` in the map-ui worktree).
+
+### Findings the truer lazy measure exposes (not mine to fix)
+
+- `/create` 256.2 kB and `/join` 251.3 kB (budget 200 kB), `wd:map-app` 177.8 kB (140 kB) and
+  `wd:console` 119.1 kB (90 kB): all four carry the same 87.3 kB gzip chunk
+  (`2t_38bmbv53l6.js` in this build — `zod`), so `zod` is reachable from the `/create` and
+  `/join` shells and from `MapApp` and `ApiConsole`. `check-bundle` is red until that import is
+  moved behind a lazy boundary or replaced by hand-written guards (§7.3).
+- `/demo` and `/room/[code]` render no `h1` (a11y audit `h1-count`, desktop and mobile). A
+  visually hidden `<h1>` (`War room DEMO` / `War room ABC234`) in `AppShell` / `TopBar` — and in
+  `MapAppLoader`'s server-rendered fallback so the pre-hydration audit passes — fixes it.
+- `HeroPlayer`'s _take over_ overlay spans most of the 340 px frame at 390 (mono uppercase with
+  tracking); a shorter mobile label or `sm:` sizing in `HeroPlayer.tsx` would free the map. The
+  hero's LIVE pip is the §4.1 chrome (a live preview of the replay), unchanged.
+
+### E2E on this build (`PORT=3106`, desktop + mobile)
+
+`home.spec`, `seo.spec`, `a11y.spec`, `og.spec`: 86 passed, 4 failed — the four failures are the
+`h1-count` audit on `/demo` and `/room/ABC234` (desktop and mobile) noted above; every `home`,
+`seo` and `og` test passes on both projects.
