@@ -23,7 +23,9 @@ export function IniViewer({ template }: { template: string }) {
           >
             <summary className="flex cursor-pointer flex-wrap items-baseline gap-x-4 gap-y-1 px-4 py-3 select-none sm:px-5">
               <span className="text-[15px] font-semibold text-fg">{section.label}</span>
-              <code className="font-mono text-[12px] text-fg-muted">[{section.name}]</code>
+              <code className="max-w-full min-w-0 font-mono text-[12px] [overflow-wrap:anywhere] break-all text-fg-muted">
+                [{section.name}]
+              </code>
               <span className="ml-auto font-mono text-[11px] tracking-[0.14em] text-fg-faint uppercase">
                 {keys.length} key{keys.length === 1 ? "" : "s"}
               </span>

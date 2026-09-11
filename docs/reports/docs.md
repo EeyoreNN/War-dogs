@@ -213,3 +213,62 @@ now.` with `A whole-app failure would affect every server, not one.` The upstrea
 - Nothing from the package block is missing. Phase 2 follow-ups only: the map-guide imports
   above, and re-running `docs.spec.ts` on the integrated build (it passed here against the
   worktree's own server).
+
+## Phase 2 — integration fixes
+
+Merged `claude/wardogs-clone-improvement-agc9oe` (every package's Phase 1) into `wp/docs`, ran
+`next typegen`. Gates in the worktree after the changes: `npm run lint`, `npm run typecheck`,
+`npm run test` (55 files / 325 tests), `npm run build` — all green. E2E:
+`PORT=3105 npm run e2e -- tests/e2e/docs.spec.ts` on the integrated build — 12/12 green on both
+projects (the Playwright config built and started `next start -p 3105` itself; the relay entry
+reused the relay already listening on 8787 because `reuseExistingServer` is on outside CI).
+
+### Done
+
+1. **Map guide reads the real modules** (`src/content/dev/map-guide.tsx`): `MAP_PX`,
+   `DEFAULT_STROKE_WIDTH`, `DEFAULT_DANGER_RADIUS`, `MAX_NODES`, `MAX_NODES_PER_OP`,
+   `MAX_STATE_BYTES`, `MAX_STROKE_POINTS`, `MAX_TEXT_CHARS` from `@/lib/map/types`; `gridRef`,
+   `GRID_COLS`, `GRID_N` from `@/lib/map/grid` (the local mirror is deleted; the zone table calls
+   `gridRef(anchor, true)`); `MAP_CHUNK_BYTES` and `MAX_MAP_BYTES` from `@/lib/realtime/map-chunks`
+   (the "48 kB chunks" and "shared ≤ 1.5 MB" figures are now derived); `EXPORT_LEGEND_HEIGHT` from
+   `@/lib/map/export-png`; `DEFAULT_RES` from `@/lib/terrain/generate`; zone columns from
+   `CONTROL_ZONE_IDS` minus `none`. The grid copy and stat chips are rendered from `GRID_N` /
+   `GRID_COLS`. Facts re-checked against the code: grid A–J / 1–10 with keypad sub-cells (7 8 9
+   top, 1 bottom-left) matches `grid.ts`; `MAP_LIST` has the three built-ins (zestafona, bakurani,
+   ozeti); the `MapSourceSchema` upload shape (SHA-256 hex of the shared bytes, `w`/`h` ≤ 1024,
+   name ≤ 64) matches the pipeline text; `/terrain/<map>.svg` sizes 320/640/1024 match the route
+   schema; the export paragraph was corrected — `exportPng` renders at `MAP_PX` (2048 px) with a
+   56 px legend strip (room code, team, map, zone, date), not "at the current zoom"; Save/Load plan
+   describe `planToSnapshot` / `importPlan` (`replace` | `merge`). The 8 MB file-input cap stays a
+   literal with a comment: it is the §4.3.6 limit and no module exports it yet (WP3's `UploadMap`
+   is Phase 2 there).
+2. **Mobile overflow on `/dev`**: the culprit was `IniViewer`'s section-name `<code>` in each
+   `<summary>` (`[/Script/WDGame.WDGameSession]` cannot wrap); it now has `min-w-0 max-w-full
+break-all [overflow-wrap:anywhere]`. `scrollshoot.mjs` at 390 px: `scrollW === innerWidth` on
+   `/dev`, `/rcon-reference`, `/discord-help`, `/map-guide` (the only elements wider than the
+   viewport are tables and `<pre>` blocks inside their own `overflow-x-auto` containers, as the
+   spec allows). The toast container (`inset-x-4`, WP6) was only reported because the layout
+   viewport had been widened; it sits at 374 px now.
+3. **Canonical + JSON-LD** (WP6's request): verified — all four pages export
+   `alternates.canonical` and render `TechArticle` + `BreadcrumbList` through
+   `@/components/site/json-ld`; `docs.spec` asserts it on the integrated build.
+4. **Route handler headers** verified with `curl -I` against the build: `/openapi.json` →
+   `content-type: application/json; charset=utf-8`, `cache-control: public, max-age=3600,
+stale-while-revalidate=86400`, `access-control-allow-origin: *`; `/ServerSettings.ini` →
+   `content-type: text/plain; charset=utf-8`, `content-disposition: attachment;
+filename="ServerSettings.ini"`, same cache header. Exactly §3.14.
+5. **Visual QA**: `scrollshoot.mjs` full-page shots at 1440×900 and 390×844 for the four routes
+   plus element crops of the annotated template (sections 1 and 7 open), the grid, zone, custom
+   maps and reference sections, under `scratchpad/build/shots-docs-p2/`. Nothing else needed
+   fixing.
+
+### Not done
+
+- Nothing outstanding for WP5. Requests received from other packages (WP4's `/rcon-api` page
+  wiring, WP6's canonical/JSON-LD) are either theirs to build or already satisfied.
+
+### Requests to other packages
+
+- **WP3** (`UploadMap.tsx`, Phase 2): export the file-input cap (e.g. `MAX_UPLOAD_BYTES = 8 *
+1024 * 1024`) from a non-component module so the map guide can import it instead of quoting 8 MB.
+- **WP6**: none new.
