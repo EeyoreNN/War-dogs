@@ -128,7 +128,14 @@ interface Draft {
   revs: Record<string, Rev>;
   tombstones: Record<string, Rev>;
   settings: RoomSettings;
-  w: { nodes: boolean; requests: boolean; roster: boolean; revs: boolean; tombstones: boolean; settings: boolean };
+  w: {
+    nodes: boolean;
+    requests: boolean;
+    roster: boolean;
+    revs: boolean;
+    tombstones: boolean;
+    settings: boolean;
+  };
   /** ids were added or removed → `order` is recomputed. */
   nodeSetChanged: boolean;
 }
@@ -142,7 +149,14 @@ function draftOf(base: RoomState): Draft {
     revs: base.revs,
     tombstones: base.tombstones,
     settings: base.settings,
-    w: { nodes: false, requests: false, roster: false, revs: false, tombstones: false, settings: false },
+    w: {
+      nodes: false,
+      requests: false,
+      roster: false,
+      revs: false,
+      tombstones: false,
+      settings: false,
+    },
     nodeSetChanged: false,
   };
 }
@@ -410,7 +424,9 @@ export function inverseOf(state: RoomState, op: Op): OpBody[] | null {
   switch (op.t) {
     case "node.add": {
       const ids = op.nodes.filter((n) => !isStale(state, nodeKey(n.id), rev)).map((n) => n.id);
-      return ids.length ? chunk(ids, MAX_NODES_PER_OP).map((c) => ({ t: "node.remove", ids: c })) : [];
+      return ids.length
+        ? chunk(ids, MAX_NODES_PER_OP).map((c) => ({ t: "node.remove", ids: c }))
+        : [];
     }
     case "node.update": {
       const node = state.nodes[op.id];
@@ -419,11 +435,14 @@ export function inverseOf(state: RoomState, op: Op): OpBody[] | null {
       if (!beats(rev, state.revs[key])) return [];
       const prev: Record<string, unknown> = {};
       for (const f of NODE_FIELDS[node.t]) {
-        if (!Object.prototype.hasOwnProperty.call(op.patch, f) || op.patch[f] === undefined) continue;
+        if (!Object.prototype.hasOwnProperty.call(op.patch, f) || op.patch[f] === undefined)
+          continue;
         if (!beats(rev, state.revs[fieldKey(key, f)])) continue;
         prev[f] = (node as unknown as Record<string, unknown>)[f];
       }
-      return Object.keys(prev).length ? [{ t: "node.update", id: op.id, patch: prev as NodePatch }] : [];
+      return Object.keys(prev).length
+        ? [{ t: "node.update", id: op.id, patch: prev as NodePatch }]
+        : [];
     }
     case "node.remove": {
       const nodes = op.ids
@@ -443,7 +462,9 @@ export function inverseOf(state: RoomState, op: Op): OpBody[] | null {
       return chunk(nodes, MAX_NODES_PER_OP).map((c) => ({ t: "node.add", nodes: c }));
     }
     case "request.add":
-      return isStale(state, requestKey(op.request.id), rev) ? [] : [{ t: "request.remove", id: op.request.id }];
+      return isStale(state, requestKey(op.request.id), rev)
+        ? []
+        : [{ t: "request.remove", id: op.request.id }];
     case "request.update": {
       const r = state.requests[op.id];
       if (!r) return [];
@@ -451,11 +472,14 @@ export function inverseOf(state: RoomState, op: Op): OpBody[] | null {
       if (!beats(rev, state.revs[key])) return [];
       const prev: Record<string, unknown> = {};
       for (const f of REQUEST_FIELDS) {
-        if (!Object.prototype.hasOwnProperty.call(op.patch, f) || op.patch[f] === undefined) continue;
+        if (!Object.prototype.hasOwnProperty.call(op.patch, f) || op.patch[f] === undefined)
+          continue;
         if (!beats(rev, state.revs[fieldKey(key, f)])) continue;
         prev[f] = r[f];
       }
-      return Object.keys(prev).length ? [{ t: "request.update", id: op.id, patch: prev as RequestPatch }] : [];
+      return Object.keys(prev).length
+        ? [{ t: "request.update", id: op.id, patch: prev as RequestPatch }]
+        : [];
     }
     case "request.remove": {
       const r = state.requests[op.id];
@@ -479,10 +503,14 @@ function splitKey(key: string): { entity: string; field: string | null } {
   if (key.startsWith("roster:")) {
     const rest = key.slice(7);
     const i = rest.indexOf(":");
-    return i < 0 ? { entity: key, field: null } : { entity: "roster:" + rest.slice(0, i), field: rest.slice(i + 1) };
+    return i < 0
+      ? { entity: key, field: null }
+      : { entity: "roster:" + rest.slice(0, i), field: rest.slice(i + 1) };
   }
   const i = key.indexOf(":");
-  return i < 0 ? { entity: key, field: null } : { entity: key.slice(0, i), field: key.slice(i + 1) };
+  return i < 0
+    ? { entity: key, field: null }
+    : { entity: key.slice(0, i), field: key.slice(i + 1) };
 }
 
 function fieldRevsOf(state: RoomState): Map<string, Map<string, Rev>> {
@@ -580,8 +608,7 @@ export function mergeStates(a: RoomState, b: RoomState): RoomState {
       }
     for (const [f, { rev, from }] of merged) {
       const src = (from === winnerState ? winner : entityOf(from, key))?.obj as
-        | Record<string, unknown>
-        | undefined;
+        Record<string, unknown> | undefined;
       if (!src || !Object.prototype.hasOwnProperty.call(src, f)) continue;
       obj[f] = src[f];
       revs[fieldKey(key, f)] = rev;

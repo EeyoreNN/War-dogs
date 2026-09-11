@@ -141,7 +141,13 @@ let opCounter = 0;
 /** Stamp a body with meta: `ts` follows `seq` so histories are easy to read. */
 export function op(body: OpBody, seq: number, actor: ClientId = A, id?: string): Op {
   opCounter++;
-  return { id: id ?? `OP${String(opCounter).padStart(14, "2")}`, ts: seq * 1_000, actor, seq, ...body };
+  return {
+    id: id ?? `OP${String(opCounter).padStart(14, "2")}`,
+    ts: seq * 1_000,
+    actor,
+    seq,
+    ...body,
+  };
 }
 
 /** Deterministic id factory for tests. */

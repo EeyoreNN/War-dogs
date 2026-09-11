@@ -13,9 +13,32 @@ import {
   nextSeq,
   nodesOverCap,
 } from "./reduce";
-import { MAX_NODES, MAX_NODES_PER_OP, type ClientId, type Op, type OpBody, type RoomState } from "./types";
-import { A, B, C, baseSettings, makeState, marker, member, op, request, shuffle, stroke, text } from "./test-fixtures";
+import {
+  MAX_NODES,
+  MAX_NODES_PER_OP,
+  type ClientId,
+  type Marker,
+  type NodeType,
+  type Op,
+  type OpBody,
+  type RoomState,
+} from "./types";
+import {
+  A,
+  B,
+  C,
+  baseSettings,
+  makeState,
+  marker,
+  member,
+  op,
+  request,
+  shuffle,
+  stroke,
+  text,
+} from "./test-fixtures";
 
+const mk = (s: RoomState, id = "M1") => s.nodes[id] as Marker;
 const stripVolatile = (s: RoomState) => ({
   settings: s.settings,
   nodes: s.nodes,
@@ -54,7 +77,15 @@ describe("createRoomState", () => {
     const s = createRoomState({ code: "ABC234", settings: baseSettings(), createdAt: 5, actor: A });
     expect(s.seq).toBe(1);
     expect(s.v).toBe(1);
-    for (const f of ["team", "map", "controlZone", "squadMode", "squads", "drawAccess", "mapSource"]) {
+    for (const f of [
+      "team",
+      "map",
+      "controlZone",
+      "squadMode",
+      "squads",
+      "drawAccess",
+      "mapSource",
+    ]) {
       expect(s.revs[settingKey(f)]).toEqual({ seq: 1, actor: A });
     }
     expect(s.order).toEqual([]);
@@ -78,8 +109,12 @@ describe("applyOp basics", () => {
     const stale = op({ t: "node.add", nodes: [marker("M1", { label: "OLD" })] }, 3, B);
     const s2 = applyOp(s, stale);
     expect(s2).toBe(s);
-    expect(s2.nodes.M1.label).toBe("NEW");
-    const higherSeqButIgnored = op({ t: "node.update", id: "MISSING", patch: { label: "x" } }, 9, B);
+    expect(mk(s2).label).toBe("NEW");
+    const higherSeqButIgnored = op(
+      { t: "node.update", id: "MISSING", patch: { label: "x" } },
+      9,
+      B,
+    );
     const s3 = applyOp(s, higherSeqButIgnored);
     expect(s3).not.toBe(s);
     expect(s3.seq).toBe(9);
@@ -96,10 +131,16 @@ describe("applyOp basics", () => {
   it("drops patch keys that do not apply to the node type and returns the same reference when nothing is written", () => {
     let s = makeState();
     s = applyOp(s, op({ t: "node.add", nodes: [stroke("S1")] }, 2, A));
-    const s2 = applyOp(s, op({ t: "node.update", id: "S1", patch: { label: "nope", at: { x: 0, y: 0 } } }, 3, A));
+    const s2 = applyOp(
+      s,
+      op({ t: "node.update", id: "S1", patch: { label: "nope", at: { x: 0, y: 0 } } }, 3, A),
+    );
     expect(s2.nodes.S1).toBe(s.nodes.S1);
     expect(stripVolatile(s2)).toEqual(stripVolatile(s));
-    const s3 = applyOp(s, op({ t: "node.update", id: "S1", patch: { color: "red", label: "nope" } }, 3, A));
+    const s3 = applyOp(
+      s,
+      op({ t: "node.update", id: "S1", patch: { color: "red", label: "nope" } }, 3, A),
+    );
     expect(s3.nodes.S1).toMatchObject({ color: "red" });
     expect("label" in s3.nodes.S1).toBe(false);
   });
@@ -117,7 +158,11 @@ describe("applyOp basics", () => {
 });
 
 describe("concurrent partial patches", () => {
-  const seeded = () => applyOp(makeState(), op({ t: "node.add", nodes: [marker("M1", { label: "FOB", at: { x: 0.1, y: 0.1 } })] }, 2, A));
+  const seeded = () =>
+    applyOp(
+      makeState(),
+      op({ t: "node.add", nodes: [marker("M1", { label: "FOB", at: { x: 0.1, y: 0.1 } })] }, 2, A),
+    );
   const move = op({ t: "node.update", id: "M1", patch: { at: { x: 0.5, y: 0.5 } } }, 10, A);
   const rename = op({ t: "node.update", id: "M1", patch: { label: "DELTA" } }, 11, B);
 
@@ -134,17 +179,23 @@ describe("concurrent partial patches", () => {
   it("same-field patches resolve by rev in either order (seq, then actor)", () => {
     const p1 = op({ t: "node.update", id: "M1", patch: { label: "ONE" } }, 10, B);
     const p2 = op({ t: "node.update", id: "M1", patch: { label: "TWO" } }, 10, A);
-    expect(applyOps(seeded(), [p1, p2]).nodes.M1.label).toBe("ONE");
-    expect(applyOps(seeded(), [p2, p1]).nodes.M1.label).toBe("ONE");
+    expect(mk(applyOps(seeded(), [p1, p2])).label).toBe("ONE");
+    expect(mk(applyOps(seeded(), [p2, p1])).label).toBe("ONE");
     const p3 = op({ t: "node.update", id: "M1", patch: { label: "THREE" } }, 12, A);
-    expect(applyOps(seeded(), [p3, p1]).nodes.M1.label).toBe("THREE");
-    expect(applyOps(seeded(), [p1, p3]).nodes.M1.label).toBe("THREE");
+    expect(mk(applyOps(seeded(), [p3, p1])).label).toBe("THREE");
+    expect(mk(applyOps(seeded(), [p1, p3])).label).toBe("THREE");
   });
   it("a patch may apply partially", () => {
-    const s = applyOp(seeded(), op({ t: "node.update", id: "M1", patch: { label: "LATE" } }, 20, B));
-    const s2 = applyOp(s, op({ t: "node.update", id: "M1", patch: { label: "EARLY", at: { x: 0.9, y: 0.9 } } }, 15, A));
-    expect(s2.nodes.M1.label).toBe("LATE");
-    expect(s2.nodes.M1.at).toEqual({ x: 0.9, y: 0.9 });
+    const s = applyOp(
+      seeded(),
+      op({ t: "node.update", id: "M1", patch: { label: "LATE" } }, 20, B),
+    );
+    const s2 = applyOp(
+      s,
+      op({ t: "node.update", id: "M1", patch: { label: "EARLY", at: { x: 0.9, y: 0.9 } } }, 15, A),
+    );
+    expect(mk(s2).label).toBe("LATE");
+    expect(mk(s2).at).toEqual({ x: 0.9, y: 0.9 });
   });
 });
 
@@ -169,13 +220,15 @@ describe("delete beats move regardless of arrival order", () => {
     const resurrect = op({ t: "node.add", nodes: [marker("M1", { label: "BACK" })] }, 12, B);
     const late = op({ t: "node.update", id: "M1", patch: { label: "MOVED" } }, 13, A);
     const s = applyOps(seeded(), [remove, resurrect, late]);
-    expect(s.nodes.M1.label).toBe("MOVED");
+    expect(mk(s).label).toBe("MOVED");
     expect(s.tombstones[nodeKey("M1")]).toBeUndefined();
     const olderPatch = op({ t: "node.update", id: "M1", patch: { label: "OLD" } }, 11, C);
-    expect(applyOp(s, olderPatch).nodes.M1.label).toBe("MOVED");
+    expect(mk(applyOp(s, olderPatch)).label).toBe("MOVED");
   });
   it("a remove is not blocked by a higher field rev", () => {
-    const s = applyOps(seeded(), [op({ t: "node.update", id: "M1", patch: { label: "X" } }, 50, A)]);
+    const s = applyOps(seeded(), [
+      op({ t: "node.update", id: "M1", patch: { label: "X" } }, 50, A),
+    ]);
     const s2 = applyOp(s, op({ t: "node.remove", ids: ["M1"] }, 20, B));
     expect(s2.nodes.M1).toBeUndefined();
   });
@@ -186,10 +239,13 @@ describe("re-add after delete", () => {
     let s = applyOp(makeState(), op({ t: "node.add", nodes: [marker("M1")] }, 2, A));
     s = applyOp(s, op({ t: "node.update", id: "M1", patch: { label: "X" } }, 3, A));
     s = applyOp(s, op({ t: "node.remove", ids: ["M1"] }, 4, B));
-    const stale = applyOp(s, op({ t: "node.add", nodes: [marker("M1", { label: "STALE" })] }, 3, C));
+    const stale = applyOp(
+      s,
+      op({ t: "node.add", nodes: [marker("M1", { label: "STALE" })] }, 3, C),
+    );
     expect(stale.nodes.M1).toBeUndefined();
     const s2 = applyOp(s, op({ t: "node.add", nodes: [marker("M1", { label: "AGAIN" })] }, 5, C));
-    expect(s2.nodes.M1.label).toBe("AGAIN");
+    expect(mk(s2).label).toBe("AGAIN");
     expect(s2.revs[nodeKey("M1")]).toEqual({ seq: 5, actor: C });
     expect(s2.revs[fieldKey("M1", "label")]).toBeUndefined();
     expect(s2.tombstones[nodeKey("M1")]).toBeUndefined();
@@ -199,9 +255,11 @@ describe("re-add after delete", () => {
     let s = applyOp(makeState(), op({ t: "node.add", nodes: [marker("M1")] }, 2, A));
     s = applyOp(s, op({ t: "node.update", id: "M1", patch: { label: "X" } }, 3, A));
     s = applyOp(s, op({ t: "node.add", nodes: [marker("M1", { label: "GEN2" })] }, 4, B));
-    expect(s.nodes.M1.label).toBe("GEN2");
+    expect(mk(s).label).toBe("GEN2");
     expect(s.revs[fieldKey("M1", "label")]).toBeUndefined();
-    expect(applyOp(s, op({ t: "node.update", id: "M1", patch: { label: "OLDPATCH" } }, 3, C)).nodes.M1.label).toBe("GEN2");
+    expect(
+      mk(applyOp(s, op({ t: "node.update", id: "M1", patch: { label: "OLDPATCH" } }, 3, C))).label,
+    ).toBe("GEN2");
   });
 });
 
@@ -209,7 +267,14 @@ describe("layer.clear", () => {
   it("clears by layer with a type filter and races an add correctly", () => {
     let s = applyOp(
       makeState(),
-      op({ t: "node.add", nodes: [marker("M1"), stroke("S1"), stroke("S2", { layer: "squad:Alpha" }), text("T1")] }, 2, A),
+      op(
+        {
+          t: "node.add",
+          nodes: [marker("M1"), stroke("S1"), stroke("S2", { layer: "squad:Alpha" }), text("T1")],
+        },
+        2,
+        A,
+      ),
     );
     const clear = op({ t: "layer.clear", layer: "team", types: ["stroke", "text"] }, 5, A);
     s = applyOp(s, clear);
@@ -239,7 +304,17 @@ describe("requests, roster, settings", () => {
   it("request lifecycle patches converge per field", () => {
     let s = applyOp(makeState(), op({ t: "request.add", request: request("R1") }, 2, A));
     const claim = op(
-      { t: "request.update", id: "R1", patch: { status: "claimed", claimedBy: B, claimedByName: "Bravo", claimedAt: 5000, etaSec: 60 } },
+      {
+        t: "request.update",
+        id: "R1",
+        patch: {
+          status: "claimed",
+          claimedBy: B,
+          claimedByName: "Bravo",
+          claimedAt: 5000,
+          etaSec: 60,
+        },
+      },
       5,
       B,
     );
@@ -253,15 +328,29 @@ describe("requests, roster, settings", () => {
     expect(applyOp(s, note).requests.R1).toBeUndefined();
   });
   it("roster upsert/update/remove follow the same rules", () => {
-    let s = applyOp(makeState(), op({ t: "roster.upsert", member: member(B, { callsign: "Bravo" }) }, 2, B));
-    s = applyOp(s, op({ t: "roster.update", id: B, patch: { focus: "medic", id: "hack" as ClientId } as never }, 3, B));
+    let s = applyOp(
+      makeState(),
+      op({ t: "roster.upsert", member: member(B, { callsign: "Bravo" }) }, 2, B),
+    );
+    s = applyOp(
+      s,
+      op(
+        { t: "roster.update", id: B, patch: { focus: "medic", id: "hack" as ClientId } as never },
+        3,
+        B,
+      ),
+    );
     expect(s.roster[B].focus).toBe("medic");
     expect(s.roster[B].id).toBe(B);
     expect(s.revs[fieldKey(rosterKey(B), "focus")]).toEqual({ seq: 3, actor: B });
     const removed = applyOp(s, op({ t: "roster.remove", id: B }, 4, A));
     expect(removed.roster[B]).toBeUndefined();
     expect(removed.tombstones[rosterKey(B)]).toEqual({ seq: 4, actor: A });
-    expect(applyOp(removed, op({ t: "roster.update", id: B, patch: { focus: "pilot" } }, 5, B)).roster[B]).toBeUndefined();
+    expect(
+      applyOp(removed, op({ t: "roster.update", id: B, patch: { focus: "pilot" } }, 5, B)).roster[
+        B
+      ],
+    ).toBeUndefined();
     const back = applyOp(removed, op({ t: "roster.upsert", member: member(B) }, 6, B));
     expect(back.roster[B]).toBeDefined();
   });
@@ -285,8 +374,14 @@ describe("order", () => {
     const n1 = marker("M1", { createdAt: 5 });
     const n2 = marker("M2", { createdAt: 3 });
     const n3 = marker("M0", { createdAt: 5 });
-    const x = applyOps(makeState(), [op({ t: "node.add", nodes: [n1, n2] }, 2, A), op({ t: "node.add", nodes: [n3] }, 3, B)]);
-    const y = applyOps(makeState(), [op({ t: "node.add", nodes: [n3] }, 3, B), op({ t: "node.add", nodes: [n2, n1] }, 2, A)]);
+    const x = applyOps(makeState(), [
+      op({ t: "node.add", nodes: [n1, n2] }, 2, A),
+      op({ t: "node.add", nodes: [n3] }, 3, B),
+    ]);
+    const y = applyOps(makeState(), [
+      op({ t: "node.add", nodes: [n3] }, 3, B),
+      op({ t: "node.add", nodes: [n2, n1] }, 2, A),
+    ]);
     expect(x.order).toEqual(["M2", "M0", "M1"]);
     expect(y.order).toEqual(x.order);
     expect(canonicalOrder(x.nodes)).toEqual(x.order);
@@ -304,12 +399,24 @@ describe("node cap", () => {
     const batches: Op[] = [];
     let seq = 2;
     for (let i = 0; i < MAX_NODES / MAX_NODES_PER_OP; i++) {
-      const nodes = Array.from({ length: MAX_NODES_PER_OP }, (_, j) => stroke(`S${i * MAX_NODES_PER_OP + j}`, { createdAt: i * MAX_NODES_PER_OP + j }));
+      const nodes = Array.from({ length: MAX_NODES_PER_OP }, (_, j) =>
+        stroke(`S${i * MAX_NODES_PER_OP + j}`, { createdAt: i * MAX_NODES_PER_OP + j }),
+      );
       batches.push(op({ t: "node.add", nodes }, seq++, A));
     }
     s = applyOps(s, batches);
     expect(Object.keys(s.nodes).length).toBe(MAX_NODES);
-    const over = applyOp(s, op({ t: "node.add", nodes: [marker("M1", { createdAt: 99_999 }), stroke("SX", { createdAt: 99_998 })] }, seq++, B));
+    const over = applyOp(
+      s,
+      op(
+        {
+          t: "node.add",
+          nodes: [marker("M1", { createdAt: 99_999 }), stroke("SX", { createdAt: 99_998 })],
+        },
+        seq++,
+        B,
+      ),
+    );
     expect(Object.keys(over.nodes).length).toBe(MAX_NODES);
     expect(over.nodes.S0).toBeUndefined();
     expect(over.nodes.S1).toBeUndefined();
@@ -323,7 +430,11 @@ describe("node cap", () => {
 describe("inverseOf", () => {
   const seeded = () =>
     applyOps(makeState(), [
-      op({ t: "node.add", nodes: [marker("M1", { label: "ONE" }), stroke("S1"), text("T1")] }, 2, A),
+      op(
+        { t: "node.add", nodes: [marker("M1", { label: "ONE" }), stroke("S1"), text("T1")] },
+        2,
+        A,
+      ),
       op({ t: "request.add", request: request("R1") }, 3, A),
       op({ t: "roster.upsert", member: member(A) }, 4, A),
     ]);
@@ -340,26 +451,41 @@ describe("inverseOf", () => {
   it("round-trips every invertible op type", () => {
     const s = seeded();
     roundTrip(s, { t: "node.add", nodes: [marker("M9")] }, 10);
-    roundTrip(s, { t: "node.update", id: "M1", patch: { label: "TWO", at: { x: 0.9, y: 0.9 } } }, 10);
+    roundTrip(
+      s,
+      { t: "node.update", id: "M1", patch: { label: "TWO", at: { x: 0.9, y: 0.9 } } },
+      10,
+    );
     roundTrip(s, { t: "node.remove", ids: ["M1", "S1"] }, 10);
     roundTrip(s, { t: "layer.clear", layer: "team", types: ["stroke", "text"] }, 10);
     roundTrip(s, { t: "layer.clear", layer: "team", types: null }, 10);
     roundTrip(s, { t: "request.add", request: request("R2") }, 10);
-    roundTrip(s, { t: "request.update", id: "R1", patch: { status: "claimed", claimedBy: B, note: "x" } }, 10);
+    roundTrip(
+      s,
+      { t: "request.update", id: "R1", patch: { status: "claimed", claimedBy: B, note: "x" } },
+      10,
+    );
     roundTrip(s, { t: "request.remove", id: "R1" }, 10);
   });
   it("returns null for roster and settings ops", () => {
     const s = seeded();
-    expect(inverseOf(s, op({ t: "roster.update", id: A, patch: { focus: "medic" } }, 10, A))).toBeNull();
+    expect(
+      inverseOf(s, op({ t: "roster.update", id: A, patch: { focus: "medic" } }, 10, A)),
+    ).toBeNull();
     expect(inverseOf(s, op({ t: "roster.upsert", member: member(B) }, 10, A))).toBeNull();
     expect(inverseOf(s, op({ t: "roster.remove", id: A }, 10, A))).toBeNull();
     expect(inverseOf(s, op({ t: "settings.update", patch: { map: "ozeti" } }, 10, A))).toBeNull();
   });
   it("node.update inverse carries only the keys that actually change", () => {
     const s = seeded();
-    const inv = inverseOf(s, op({ t: "node.update", id: "M1", patch: { label: "X", color: "red" } as never }, 10, A));
+    const inv = inverseOf(
+      s,
+      op({ t: "node.update", id: "M1", patch: { label: "X", color: "red" } as never }, 10, A),
+    );
     expect(inv).toEqual([{ t: "node.update", id: "M1", patch: { label: "ONE" } }]);
-    expect(inverseOf(s, op({ t: "node.update", id: "NOPE", patch: { label: "X" } }, 10, A))).toEqual([]);
+    expect(
+      inverseOf(s, op({ t: "node.update", id: "NOPE", patch: { label: "X" } }, 10, A)),
+    ).toEqual([]);
   });
   it("batches at MAX_NODES_PER_OP", () => {
     const nodes = Array.from({ length: MAX_NODES_PER_OP * 2 + 1 }, (_, i) => stroke(`S${i}`));
@@ -370,8 +496,15 @@ describe("inverseOf", () => {
     }
     const inv = inverseOf(s, op({ t: "layer.clear", layer: "team", types: null }, 50, A))!;
     expect(inv.length).toBe(3);
-    expect(inv.map((b) => (b.t === "node.add" ? b.nodes.length : -1))).toEqual([MAX_NODES_PER_OP, MAX_NODES_PER_OP, 1]);
-    const inv2 = inverseOf(s, op({ t: "node.remove", ids: nodes.map((n) => n.id).slice(0, MAX_NODES_PER_OP) }, 50, A))!;
+    expect(inv.map((b) => (b.t === "node.add" ? b.nodes.length : -1))).toEqual([
+      MAX_NODES_PER_OP,
+      MAX_NODES_PER_OP,
+      1,
+    ]);
+    const inv2 = inverseOf(
+      s,
+      op({ t: "node.remove", ids: nodes.map((n) => n.id).slice(0, MAX_NODES_PER_OP) }, 50, A),
+    )!;
     expect(inv2.length).toBe(1);
   });
 });
@@ -405,7 +538,8 @@ function randomHistory(seed: number, count: number): Hist {
   const removedNodes: string[] = [];
   /** Index of the last layer.clear: a node patch emitted after it saw it, so it stays behind it. */
   let lastClear = -1;
-  const nodeDeps = (id: string) => (lastClear >= 0 ? [latestAdd.get(nodeKey(id))!, lastClear] : [latestAdd.get(nodeKey(id))!]);
+  const nodeDeps = (id: string) =>
+    lastClear >= 0 ? [latestAdd.get(nodeKey(id))!, lastClear] : [latestAdd.get(nodeKey(id))!];
   const push = (body: OpBody, actor: ClientId, dep: number[], seq?: number) => {
     const o = op(body, seq ?? ++clock, actor);
     if (seq !== undefined) clock = Math.max(clock, seq);
@@ -436,11 +570,30 @@ function randomHistory(seed: number, count: number): Hist {
       () => ({ t: "node.update", id, patch: { color: pick(["red", "blue", "green"] as const) } }),
     ];
     if (n.t === "marker") {
-      choices.push(() => ({ t: "node.update", id, patch: { label: `L${Math.floor(rnd() * 100)}` } }));
+      choices.push(() => ({
+        t: "node.update",
+        id,
+        patch: { label: `L${Math.floor(rnd() * 100)}` },
+      }));
       choices.push(() => ({ t: "node.update", id, patch: { at: { x: rnd(), y: rnd() } } }));
     }
-    if (n.t === "text") choices.push(() => ({ t: "node.update", id, patch: { text: `T${Math.floor(rnd() * 100)}`, size: "lg" } }));
-    if (n.t === "stroke") choices.push(() => ({ t: "node.update", id, patch: { points: [{ x: rnd(), y: rnd() }, { x: rnd(), y: rnd() }] } }));
+    if (n.t === "text")
+      choices.push(() => ({
+        t: "node.update",
+        id,
+        patch: { text: `T${Math.floor(rnd() * 100)}`, size: "lg" },
+      }));
+    if (n.t === "stroke")
+      choices.push(() => ({
+        t: "node.update",
+        id,
+        patch: {
+          points: [
+            { x: rnd(), y: rnd() },
+            { x: rnd(), y: rnd() },
+          ],
+        },
+      }));
     return pick(choices)();
   };
   const patchReq = (id: string): OpBody => ({
@@ -485,18 +638,30 @@ function randomHistory(seed: number, count: number): Hist {
       latestAdd.set(nodeKey(id), i);
     } else if (r < 0.78) {
       const layer = pick(LAYERS);
-      const types = rnd() < 0.5 ? null : [pick(["marker", "stroke", "text"] as const)];
-      const cleared = nodeIds().filter((id) => state.nodes[id].layer === layer && (types === null || types.includes(state.nodes[id].t)));
+      const types: NodeType[] | null =
+        rnd() < 0.5 ? null : [pick(["marker", "stroke", "text"] as const)];
+      const cleared = nodeIds().filter(
+        (id) =>
+          state.nodes[id].layer === layer && (types === null || types.includes(state.nodes[id].t)),
+      );
       // The clearing actor saw every earlier add, remove and layer move, so causal delivery puts
       // all of them before the clear; later adds and removes race it freely (rev decides).
-      lastClear = push({ t: "layer.clear", layer, types }, actor, ops.map((_, i) => i));
+      lastClear = push(
+        { t: "layer.clear", layer, types },
+        actor,
+        ops.map((_, i) => i),
+      );
       for (const id of cleared) {
         latestAdd.delete(nodeKey(id));
         removedNodes.push(id);
       }
     } else if (r < 0.84) {
       const id = `R${nextId++}`;
-      const i = push({ t: "request.add", request: request(id, { by: actor, createdAt: 1_000 + nextId }) }, actor, []);
+      const i = push(
+        { t: "request.add", request: request(id, { by: actor, createdAt: 1_000 + nextId }) },
+        actor,
+        [],
+      );
       latestAdd.set(nodeKey(id), i);
     } else if (r < 0.9 && reqIds().length) {
       const id = pick(reqIds());
@@ -507,13 +672,37 @@ function randomHistory(seed: number, count: number): Hist {
       }
     } else if (r < 0.95) {
       const who = pick(ACTORS);
-      if (state.roster[who] && rnd() < 0.7) push({ t: "roster.update", id: who, patch: { focus: pick(["medic", "pilot", null] as const) } }, actor, [latestAdd.get(rosterKey(who))!]);
+      if (state.roster[who] && rnd() < 0.7)
+        push(
+          {
+            t: "roster.update",
+            id: who,
+            patch: { focus: pick(["medic", "pilot", null] as const) },
+          },
+          actor,
+          [latestAdd.get(rosterKey(who))!],
+        );
       else {
-        const i = push({ t: "roster.upsert", member: member(who, { callsign: `c${nextId++}` }) }, actor, []);
+        const i = push(
+          { t: "roster.upsert", member: member(who, { callsign: `c${nextId++}` }) },
+          actor,
+          [],
+        );
         latestAdd.set(rosterKey(who), i);
       }
     } else {
-      push({ t: "settings.update", patch: pick([{ map: "ozeti" as const }, { controlZone: "houses" as const }, { drawAccess: "request" as const }]) }, actor, []);
+      push(
+        {
+          t: "settings.update",
+          patch: pick([
+            { map: "ozeti" as const },
+            { controlZone: "houses" as const },
+            { drawAccess: "request" as const },
+          ]),
+        },
+        actor,
+        [],
+      );
     }
   }
   return { ops: ops.slice(0, count), deps: deps.slice(0, count) };
@@ -527,7 +716,8 @@ function causalPermutation(h: Hist, seed: number): Op[] {
   const out: Op[] = [];
   const ready = () => {
     const xs: number[] = [];
-    for (let i = 0; i < n; i++) if (!placed[i] && h.deps[i].every((d) => d >= n || placed[d])) xs.push(i);
+    for (let i = 0; i < n; i++)
+      if (!placed[i] && h.deps[i].every((d) => d >= n || placed[d])) xs.push(i);
     return xs;
   };
   while (out.length < n) {
@@ -545,7 +735,9 @@ function causalCut(h: Hist, seed: number): Op[] {
   const keep = new Array<boolean>(h.ops.length).fill(false);
   for (let i = 0; i < h.ops.length; i++) keep[i] = rnd() < 0.6;
   // Close under deps.
-  for (let pass = 0; pass < 3; pass++) for (let i = 0; i < h.ops.length; i++) if (keep[i]) for (const d of h.deps[i]) if (d < h.ops.length) keep[d] = true;
+  for (let pass = 0; pass < 3; pass++)
+    for (let i = 0; i < h.ops.length; i++)
+      if (keep[i]) for (const d of h.deps[i]) if (d < h.ops.length) keep[d] = true;
   return h.ops.filter((_, i) => keep[i]);
 }
 
@@ -585,17 +777,23 @@ describe("convergence", () => {
     }
   });
   it("mergeStates keeps a field patched after the winning add and drops replaced-generation revs", () => {
-    const s0 = applyOp(makeState(), op({ t: "node.add", nodes: [marker("M1", { label: "ONE" })] }, 2, A));
+    const s0 = applyOp(
+      makeState(),
+      op({ t: "node.add", nodes: [marker("M1", { label: "ONE" })] }, 2, A),
+    );
     const a = applyOp(s0, op({ t: "node.update", id: "M1", patch: { label: "PATCHED" } }, 5, A));
-    const b = applyOps(s0, [op({ t: "node.remove", ids: ["M1"] }, 3, B), op({ t: "node.add", nodes: [marker("M1", { label: "GEN2" })] }, 4, B)]);
+    const b = applyOps(s0, [
+      op({ t: "node.remove", ids: ["M1"] }, 3, B),
+      op({ t: "node.add", nodes: [marker("M1", { label: "GEN2" })] }, 4, B),
+    ]);
     const m = mergeStates(a, b);
-    expect(m.nodes.M1.label).toBe("PATCHED");
+    expect(mk(m).label).toBe("PATCHED");
     expect(m.revs[nodeKey("M1")]).toEqual({ seq: 4, actor: B });
     expect(m.revs[fieldKey("M1", "label")]).toEqual({ seq: 5, actor: A });
     expect(m.tombstones[nodeKey("M1")]).toBeUndefined();
     const c = applyOp(s0, op({ t: "node.update", id: "M1", patch: { label: "OLDGEN" } }, 3, C));
     const m2 = mergeStates(c, b);
-    expect(m2.nodes.M1.label).toBe("GEN2");
+    expect(mk(m2).label).toBe("GEN2");
     expect(m2.revs[fieldKey("M1", "label")]).toBeUndefined();
     // A tombstone above every entity rev wins and is kept.
     const d = applyOp(s0, op({ t: "node.remove", ids: ["M1"] }, 9, C));
@@ -606,8 +804,18 @@ describe("convergence", () => {
     expect(m3.order).toEqual([]);
   });
   it("mergeStates merges settings per field, takes min createdAt, max seq and the first code", () => {
-    const a = createRoomState({ code: "ABC234", settings: baseSettings(), createdAt: 10, actor: A });
-    const b = createRoomState({ code: "ABC234", settings: baseSettings({ map: "ozeti" }), createdAt: 5, actor: B });
+    const a = createRoomState({
+      code: "ABC234",
+      settings: baseSettings(),
+      createdAt: 10,
+      actor: A,
+    });
+    const b = createRoomState({
+      code: "ABC234",
+      settings: baseSettings({ map: "ozeti" }),
+      createdAt: 5,
+      actor: B,
+    });
     const a2 = applyOp(a, op({ t: "settings.update", patch: { controlZone: "houses" } }, 7, A));
     const m = mergeStates(a2, b);
     expect(m.settings.map).toBe("ozeti"); // (1, B) beats (1, A)

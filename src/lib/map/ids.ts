@@ -6,7 +6,8 @@ export const ID_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 export const ID_LENGTH = 16;
 export const CLIENT_ID_LENGTH = 12;
 export const CLIENT_ID_PREFIX = "wd_";
-export const ID_PATTERN = /^[A-HJ-NP-Z2-9]{1,32}$/;
+/** Node / request / op ids: no ":" (keys.ts), URL-safe, bounded. newId() emits base32; fixtures may not. */
+export const ID_PATTERN = /^[A-Za-z0-9_-]{1,32}$/;
 export const CLIENT_ID_PATTERN = /^wd_[A-HJ-NP-Z2-9]{12}$/;
 
 function randomChars(n: number): string {

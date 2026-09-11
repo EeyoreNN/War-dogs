@@ -3,7 +3,10 @@ import { z } from "zod";
 import { CODE_PATTERN, RESERVED_CODES, normalizeCode } from "./code";
 
 /** Normalises ("x5gm-4q" → "X5GM4Q") and then requires a six-symbol code. */
-export const RoomCodeSchema = z.string().transform(normalizeCode).pipe(z.string().regex(CODE_PATTERN));
+export const RoomCodeSchema = z
+  .string()
+  .transform(normalizeCode)
+  .pipe(z.string().regex(CODE_PATTERN));
 
 /** A room code or a reserved code (`DEMO`): `RoomState.code` and the `/room/[code]` route. */
 export const AnyRoomCodeSchema = RoomCodeSchema.or(z.enum(RESERVED_CODES));
