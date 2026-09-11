@@ -550,7 +550,6 @@ function randomHistory(seed: number, count: number): Hist {
   };
   const nodeIds = () => Object.keys(state.nodes);
   const reqIds = () => Object.keys(state.requests);
-  const rosterIds = () => Object.keys(state.roster) as ClientId[];
   const newNode = (id: string) => {
     const layer = pick(LAYERS);
     const createdAt = 1_000 + Math.floor(rnd() * 5000);
