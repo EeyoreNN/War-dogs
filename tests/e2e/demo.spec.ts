@@ -2,9 +2,15 @@
 // timeline, the epoch rolls, `Clear mine` removes only mine, the desktop bar / mobile chip.
 import { expect, test, type Page } from "@playwright/test";
 
+// These journeys are LOCAL by contract: opt out of any relay the build was configured with
+// (`wardogs:relay = "off"`, §5.2) before the first page script runs.
+test.beforeEach(({ context }) =>
+  context.addInitScript(() => localStorage.setItem("wardogs:relay", "off")),
+);
 const EPOCH_MS = 300_000;
-const markers = (page: Page) => page.locator('[data-node-type="marker"]');
-const pins = (page: Page) => page.locator("svg [data-request-id]");
+// Scoped to the live map: the server shell keeps its own (hidden) copy of the seed plan (§3.13).
+const markers = (page: Page) => page.getByRole("application").locator('[data-node-type="marker"]');
+const pins = (page: Page) => page.getByRole("application").locator("[data-request-id]");
 
 test("seed plan, scripted bots, epoch roll and Clear mine", async ({ page, isMobile }) => {
   // A fixed epoch start well away from a boundary; installed BEFORE navigation (§4.2).
@@ -42,7 +48,7 @@ test("seed plan, scripted bots, epoch roll and Clear mine", async ({ page, isMob
   const box = (await map.boundingBox())!;
   await page.mouse.click(box.x + box.width * 0.2, box.y + box.height * 0.2);
   const seedMarkers = 7;
-  await expect(markers(page)).toHaveCount(seedMarkers + 2); // + the bot's troops at 14 s comes later; ours now
+  await expect(markers(page)).toHaveCount(seedMarkers + 1); // ours now; the bot's troops come at 14 s
   await page.clock.runFor(46_000);
   if (!isMobile) {
     await page.getByRole("tab", { name: /done/i }).click();

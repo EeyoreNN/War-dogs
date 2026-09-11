@@ -2,6 +2,11 @@
 // persistence, COPY LINK, LOCAL pill. Desktop project.
 import { expect, test, type Page } from "@playwright/test";
 
+// These journeys are LOCAL by contract: opt out of any relay the build was configured with
+// (`wardogs:relay = "off"`, §5.2) before the first page script runs.
+test.beforeEach(({ context }) =>
+  context.addInitScript(() => localStorage.setItem("wardogs:relay", "off")),
+);
 test.skip(({ isMobile }) => !!isMobile, "desktop only");
 
 const map = (page: Page) => page.getByRole("application");
