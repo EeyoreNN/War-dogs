@@ -7,14 +7,12 @@
  * "Don't show automatically" (§4.8) — so `showRcon` defaults to true when the pref is absent.
  */
 
-import {
-  KEY_PREFS,
-  generateCallsign,
-  loadIdentity,
-  readJson,
-  saveIdentity,
-  savePrefs,
-} from "@/lib/storage";
+// Submodule imports on purpose: the `@/lib/storage` barrel re-exports `./room`, which reaches
+// `zod` through `map/schema` — that would put ~87 kB gz on every admin first load (§7.3).
+import { generateCallsign, loadIdentity, saveIdentity } from "@/lib/storage/identity";
+import { KEY_PREFS } from "@/lib/storage/keys";
+import { readJson } from "@/lib/storage/local";
+import { savePrefs } from "@/lib/storage/prefs";
 
 export { generateCallsign };
 

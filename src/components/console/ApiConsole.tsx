@@ -304,7 +304,11 @@ function ConsoleInner({ configText, className }: { configText: string; className
   const responseSchema = endpoint.responses.find((r) => r.status === "200")?.schema ?? null;
 
   return (
-    <div className={cn("not-prose flex flex-col gap-6", className)} data-testid="api-console">
+    <div
+      className={cn("not-prose flex flex-col gap-6", className)}
+      data-testid="api-console"
+      data-bundle="wd:console"
+    >
       {/* Target */}
       <section aria-labelledby="target-heading" className="panel p-4 sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
