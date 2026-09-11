@@ -66,7 +66,7 @@ function TopBarMock() {
       className="flex w-full max-w-[320px] items-center gap-2 rounded-md border border-line-strong bg-bg-1 px-3 py-2 font-mono text-[11px] tracking-[0.14em] whitespace-nowrap text-fg-muted uppercase shadow-panel"
     >
       <LogoMark size={18} />
-      <span className="hidden sm:inline">War room</span>
+      <span className="hidden sm:inline md:hidden 2xl:inline">War room</span>
       <span className="rounded-sm border border-line-strong bg-bg-2 px-1.5 py-0.5 text-fg">
         ABC234
       </span>

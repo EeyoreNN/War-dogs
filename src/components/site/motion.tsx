@@ -1,24 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { LazyMotion, m, useReducedMotion } from "motion/react";
-
-const loadFeatures = () => import("./motion-features").then((mod) => mod.default);
-
-/** Wraps marketing sections once; `m.*` components below it render without the full runtime. */
-export function MotionProvider({ children }: { children: React.ReactNode }) {
-  return (
-    <LazyMotion features={loadFeatures} strict>
-      {children}
-    </LazyMotion>
-  );
-}
-
-const EASE = [0.2, 0.7, 0.2, 1] as const;
 
 /**
- * "rise" (§2.4): opacity 0→1 and translateY 12→0 on entry, once, viewport margin −10 %,
- * staggered 60 ms per `index`. Reduced motion: opacity only over 120 ms.
+ * "rise" (§2.4 #1): opacity 0→1 and translateY 12→0 on entry, once, viewport margin −10 %,
+ * staggered 60 ms per `index`. The transition itself is CSS (`[data-rise]` in globals.css) so
+ * `prefers-reduced-motion` and `@media (scripting: none)` are honoured without any script:
+ * the `motion` runtime is deliberately not on the marketing pages (§7.3 budget; see the
+ * site report). Reduced motion: opacity only, instant.
  */
 export function Rise({
   children,
@@ -31,21 +20,35 @@ export function Rise({
   className?: string;
   as?: "div" | "li" | "section";
 }) {
-  const reduced = useReducedMotion();
-  const Tag = as === "li" ? m.li : as === "section" ? m.section : m.div;
-  return (
-    <Tag
-      className={className}
-      initial={reduced ? { opacity: 0 } : { opacity: 0, y: 12 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-10% 0px -10% 0px" }}
-      transition={
-        reduced
-          ? { duration: 0.12 }
-          : { duration: 0.24, ease: EASE, delay: Math.min(index, 6) * 0.06 }
-      }
-    >
-      {children}
-    </Tag>
-  );
+  const ref = React.useRef<HTMLElement | null>(null);
+
+  // The flip is a DOM attribute, not React state: nothing re-renders, once is once.
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const reveal = () => el.setAttribute("data-rise", "in");
+    if (typeof IntersectionObserver === "undefined") {
+      reveal();
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          reveal();
+          io.disconnect();
+        }
+      },
+      { rootMargin: "-10% 0px -10% 0px", threshold: 0 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const props = {
+    ref: ref as React.Ref<never>,
+    "data-rise": "pending",
+    style: { "--rise-delay": `${Math.min(index, 6) * 60}ms` } as React.CSSProperties,
+    className,
+  };
+  return React.createElement(as, props, children);
 }

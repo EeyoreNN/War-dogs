@@ -89,7 +89,7 @@ export function Hero() {
                 <ButtonLink
                   href="/create"
                   variant="secondary"
-                  className="text-[12px] sm:text-[13px]"
+                  className="gap-1.5 px-3 text-[12px] sm:gap-2 sm:px-5 sm:text-[13px]"
                 >
                   <MapIcon size={16} aria-hidden="true" />
                   Open a war room

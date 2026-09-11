@@ -74,7 +74,7 @@ export function CodeField({ id, label = "Have a code?", className, size = "md" }
             if (error) setError(null);
           }}
           className={cn(
-            "min-w-0 flex-1 rounded-md border border-line-strong bg-bg-1 font-mono tracking-[0.3em] text-fg uppercase transition-colors outline-none placeholder:tracking-[0.3em] placeholder:text-fg-faint focus:border-accent",
+            "min-w-0 flex-1 rounded-md border border-line-strong bg-bg-1 font-mono tracking-[0.3em] text-fg uppercase transition-colors placeholder:tracking-[0.3em] placeholder:text-fg-faint focus:border-accent",
             size === "lg" ? "h-13 px-4 text-lg" : "h-12 px-4 text-[15px]",
             error && "border-danger",
           )}
