@@ -98,11 +98,11 @@ against the §4.3 UI; runs in Phase 2).
    still emits 16 base32 chars. Strict base32 would reject every other package's fixtures
    (`"n1"`, `"M1"`) at the wire and snapshot boundary. Client ids stay strict (`wd_` + 12 base32).
 2. **`OpMeta.id` and the body `id` share one key.** `Op = OpMeta & OpBody` gives `node.update`,
-   `node.remove`... wait, `node.update`, `request.update`, `request.remove`, `roster.update`,
-   `roster.remove` a single `id` property, so for those op types `op.id` _is_ the entity id and
-   there is no separate op id. Nothing in the engine keys on op ids (dedupe is by rev), so this is
-   harmless, but tests must not assert op-id uniqueness across update ops. Proposed contract
-   change for a later revision: rename the meta field to `opId`.
+   `request.update`, `request.remove`, `roster.update` and `roster.remove` a single `id`
+   property, so for those op types `op.id` _is_ the entity id and there is no separate op id.
+   Nothing in the engine keys on op ids (dedupe is by rev), so this is harmless, but tests must
+   not assert op-id uniqueness across update ops. Proposed contract change for a later revision:
+   rename the meta field to `opId`.
 3. **Convergence test constraints.** The reducer is not order-independent for a `layer.clear`
    racing a concurrent _layer move_ patch (a node moved onto / off the cleared layer), or for a
    patch whose rev exceeds a concurrent remove + re-add. Both need causal delivery, which the
