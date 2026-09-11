@@ -3,40 +3,36 @@ import { Logo } from "@/components/ui/logo";
 import { site } from "@/config/site";
 import { cn } from "@/lib/utils";
 
+const link = "text-sm text-fg-muted transition-colors hover:text-fg";
+
+/** 1 px accent rule at 30 %; lockup + version left, disclaimer centre (mono, muted), links right. */
 export function SiteFooter({ className }: { className?: string }) {
   return (
-    <footer className={cn("border-t border-line", className)}>
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-6 py-10 sm:px-10 lg:flex-row lg:items-center lg:justify-between lg:px-20">
+    <footer className={cn("mt-auto border-t border-accent/30", className)}>
+      <div className="mx-auto grid w-full max-w-[1280px] gap-6 px-6 py-10 sm:px-10 lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:px-16">
         <div className="flex items-center gap-3">
           <Logo size="sm" />
           <span className="font-mono text-[11px] tracking-[0.14em] text-fg-faint uppercase">
             v{site.version}
           </span>
         </div>
-        <p className="text-sm text-fg-faint">
+        <p className="font-mono text-[12px] text-fg-muted lg:text-center">
           Fan-made. Not affiliated with {site.game.developer} or {site.game.publisher}.
         </p>
-        <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-          <a
-            className="text-fg-muted transition-colors hover:text-fg"
-            href={site.links.discord}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+        <nav
+          aria-label="Footer"
+          className="flex flex-wrap items-center gap-x-6 gap-y-2 lg:justify-end"
+        >
+          <a className={link} href={site.links.discord} target="_blank" rel="noopener noreferrer">
             Community Discord
           </a>
-          <a
-            className="text-fg-muted transition-colors hover:text-fg"
-            href={site.links.github}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <a className={link} href={site.links.github} target="_blank" rel="noopener noreferrer">
             GitHub
           </a>
-          <Link className="text-fg-muted transition-colors hover:text-fg" href="/terms">
+          <Link className={link} href="/terms">
             Terms
           </Link>
-          <Link className="text-fg-muted transition-colors hover:text-fg" href="/privacy">
+          <Link className={link} href="/privacy">
             Privacy
           </Link>
         </nav>

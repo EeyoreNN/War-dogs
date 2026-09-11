@@ -57,11 +57,15 @@ export const metadata: Metadata = {
     title: `${site.name} — ${site.tagline.toLowerCase()}`,
     description: site.description,
     url: site.url,
+    images: [
+      { url: "/opengraph-image", width: 1200, height: 630, alt: `${site.name} — ${site.tagline}` },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: `${site.name} — ${site.tagline.toLowerCase()}`,
     description: site.description,
+    images: [{ url: "/twitter-image", alt: `${site.name} — ${site.tagline}` }],
   },
   robots: { index: true, follow: true },
   icons: {

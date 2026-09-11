@@ -71,6 +71,10 @@ const isProd = process.env.NODE_ENV === "production";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // `next dev` would otherwise append its own block to CLAUDE.md on every start.
+  agentRules: false,
+  // `next dev` refuses cross-origin dev resources; both loopback spellings are used locally.
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
   images: { formats: ["image/avif", "image/webp"] },
   async headers() {
     // Later entries override earlier ones per header key, so the specific routes come last.
