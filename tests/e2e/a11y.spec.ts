@@ -1,56 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-
-/**
- * Structural accessibility audit run inside the page (§7.2 #10): buttons and links without
- * accessible names, inputs without labels, images without alt, duplicate ids, missing `main`,
- * `h1` count ≠ 1, positive tabindex. Self-contained so the spec has no cross-package import;
- * the integrated build can swap in `src/lib/a11y/audit.ts` (`auditPage()`) once WP3 lands.
- */
-function auditInPage(): string[] {
-  const issues: string[] = [];
-  const name = (el: Element) => {
-    const aria = el.getAttribute("aria-label") ?? "";
-    const labelled = el.getAttribute("aria-labelledby");
-    const byId = labelled
-      ? labelled
-          .split(/\s+/)
-          .map((id) => document.getElementById(id)?.textContent ?? "")
-          .join(" ")
-      : "";
-    const title = el.getAttribute("title") ?? "";
-    const imgAlt = [...el.querySelectorAll("img[alt]")].map((i) => i.getAttribute("alt")).join(" ");
-    return `${aria} ${byId} ${title} ${imgAlt} ${el.textContent ?? ""}`.trim();
-  };
-  const describe = (el: Element) =>
-    `${el.tagName.toLowerCase()}${el.id ? "#" + el.id : ""}${el.className && typeof el.className === "string" ? "." + el.className.split(/\s+/).slice(0, 2).join(".") : ""}`;
-
-  for (const el of document.querySelectorAll("button, a[href], [role=button], [role=link]")) {
-    if (!name(el)) issues.push(`no accessible name: ${describe(el)}`);
-  }
-  for (const el of document.querySelectorAll<HTMLInputElement>(
-    "input:not([type=hidden]):not([type=submit]):not([type=button]), select, textarea",
-  )) {
-    const hasLabel =
-      el.getAttribute("aria-label") ||
-      el.getAttribute("aria-labelledby") ||
-      (el.id && document.querySelector(`label[for="${CSS.escape(el.id)}"]`)) ||
-      el.closest("label");
-    if (!hasLabel) issues.push(`input without label: ${describe(el)}`);
-  }
-  for (const el of document.querySelectorAll("img")) {
-    if (!el.hasAttribute("alt")) issues.push(`img without alt: ${el.getAttribute("src")}`);
-  }
-  const ids = new Map<string, number>();
-  for (const el of document.querySelectorAll("[id]")) ids.set(el.id, (ids.get(el.id) ?? 0) + 1);
-  for (const [id, n] of ids) if (n > 1) issues.push(`duplicate id: ${id} (${n})`);
-  if (!document.querySelector("main")) issues.push("missing <main>");
-  const h1s = document.querySelectorAll("h1").length;
-  if (h1s !== 1) issues.push(`h1 count is ${h1s}`);
-  for (const el of document.querySelectorAll("[tabindex]")) {
-    if (Number(el.getAttribute("tabindex")) > 0) issues.push(`positive tabindex: ${describe(el)}`);
-  }
-  return issues;
-}
+import { auditPage } from "../../src/lib/a11y/audit";
 
 const ROUTES = [
   "/",
@@ -71,11 +20,16 @@ const ROUTES = [
   "/room/ABC234",
 ];
 
+/**
+ * Structural accessibility audit run inside the page (§7.2 #10) through WP3's self-contained
+ * `auditPage` (buttons and links without accessible names, inputs without labels, images without
+ * alt, duplicate ids, missing `main`, `h1` count ≠ 1, positive tabindex).
+ */
 async function audit(page: Page, path: string) {
-  // `load`, not `networkidle`: link prefetches to routes that are not built yet never settle,
-  // and the audit reads the server-rendered structure (§7.2 #10), not network state.
+  // `load`, not `networkidle`: app routes keep long-lived connections, and the audit reads the
+  // server-rendered structure (§7.2 #10), not network state.
   await page.goto(path, { waitUntil: "load" });
-  return page.evaluate(auditInPage);
+  return page.evaluate(auditPage);
 }
 
 test.describe("a11y", () => {
