@@ -1,0 +1,208 @@
+/* Docs prose (§4.9). Same font stack as the site — never a font-family override here.
+   Measure 68ch on running text; tables and code blocks may use the full column. */
+.docs-prose {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--text-1);
+}
+.docs-prose > * + *,
+.docs-section > * + * {
+  margin-top: 1rem;
+}
+.docs-prose :where(p):not(:where(.not-prose, .not-prose *)),
+.docs-prose :where(ul):not(:where(.not-prose, .not-prose *)),
+.docs-prose :where(ol):not(:where(.not-prose, .not-prose *)),
+.docs-prose :where(h3):not(:where(.not-prose, .not-prose *)),
+.docs-prose :where(h4):not(:where(.not-prose, .not-prose *)),
+.docs-prose :where(blockquote):not(:where(.not-prose, .not-prose *)) {
+  max-width: 68ch;
+}
+.docs-prose :where(strong):not(:where(.not-prose, .not-prose *)) {
+  color: var(--text-0);
+  font-weight: 600;
+}
+.docs-prose :where(em):not(:where(.not-prose, .not-prose *)) {
+  font-style: italic;
+}
+.docs-prose :where(a:not([class])):not(:where(.not-prose, .not-prose *)) {
+  color: var(--text-0);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.docs-prose :where(a:not([class]):hover):not(:where(.not-prose, .not-prose *)) {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+.docs-prose :where(h3):not(:where(.not-prose, .not-prose *)) {
+  margin-top: 2rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text-0);
+  scroll-margin-top: 6rem;
+}
+.docs-prose :where(h4):not(:where(.not-prose, .not-prose *)) {
+  margin-top: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-1);
+}
+.docs-prose :where(ul):not(:where(.not-prose, .not-prose *)),
+.docs-prose :where(ol):not(:where(.not-prose, .not-prose *)) {
+  padding-left: 1.4rem;
+}
+.docs-prose :where(ul):not(:where(.not-prose, .not-prose *)) {
+  list-style: square;
+}
+.docs-prose :where(ol):not(:where(.not-prose, .not-prose *)) {
+  list-style: decimal;
+}
+.docs-prose :where(li + li):not(:where(.not-prose, .not-prose *)) {
+  margin-top: 0.35rem;
+}
+.docs-prose li:not(:where(.not-prose, .not-prose *))::marker {
+  color: var(--accent);
+}
+.docs-prose :where(code:not(pre code)):not(:where(.not-prose, .not-prose *)) {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  padding: 0.1em 0.375rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+  color: var(--text-0);
+  overflow-wrap: anywhere;
+}
+.docs-prose :where(kbd):not(:where(.not-prose, .not-prose *)) {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+.docs-prose :where(blockquote):not(:where(.not-prose, .not-prose *)) {
+  border-left: 2px solid var(--accent);
+  padding-left: 1rem;
+  color: var(--text-0);
+}
+.docs-prose :where(hr):not(:where(.not-prose, .not-prose *)) {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin-block: 2rem;
+}
+
+/* Tables: full-bleed on phones inside an overflow-x-auto wrapper, mono header row, zebra rows. */
+.docs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.docs-table th {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--text-1);
+  text-align: left;
+  padding: 0.5rem 0.625rem;
+  border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+}
+.docs-table td {
+  padding: 0.5rem 0.625rem;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-1);
+}
+.docs-table tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--bg-1) 55%, transparent);
+}
+.docs-table tbody tr:hover td {
+  background: var(--bg-1);
+}
+.docs-table td strong {
+  color: var(--text-0);
+}
+.docs-table td code {
+  white-space: nowrap;
+}
+.docs-table .group-row td {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--bg-1) !important;
+  padding-top: 0.75rem;
+}
+
+/* Heading anchor: the "#" shows on hover / focus-within, mono accent. */
+.docs-anchor {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.7em;
+  letter-spacing: 0;
+  color: var(--accent);
+  text-decoration: none;
+  opacity: 0;
+  margin-left: 0.5rem;
+  transition: opacity 150ms;
+}
+.docs-heading:hover .docs-anchor,
+.docs-heading:focus-within .docs-anchor,
+.docs-anchor:focus-visible {
+  opacity: 1;
+}
+
+/* Scroll-spy TOC: the active item carries a 2 px amber rule on the left. */
+.docs-toc a {
+  display: block;
+  padding: 0.3rem 0 0.3rem 0.875rem;
+  margin-left: -1px;
+  border-left: 1px solid var(--border-strong);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text-1);
+  transition:
+    color 150ms,
+    border-color 150ms;
+}
+.docs-toc a:hover {
+  color: var(--text-0);
+}
+.docs-toc a[aria-current="true"] {
+  color: var(--accent);
+  border-left: 2px solid var(--accent);
+  margin-left: -1.5px;
+}
+.docs-toc a .docs-toc-num {
+  color: var(--text-2);
+  margin-right: 0.5rem;
+}
+.docs-toc a[aria-current="true"] .docs-toc-num {
+  color: var(--accent);
+}
+
+/* Minimal syntax colouring for ini / json / http blocks. */
+.tok-c {
+  color: var(--text-2);
+  font-style: italic;
+}
+.tok-s {
+  color: var(--accent);
+}
+.tok-k {
+  color: var(--text-0);
+}
+.tok-n {
+  color: var(--info);
+}
+.tok-p {
+  color: var(--text-1);
+}
+.tok-m {
+  color: var(--ok);
+  font-weight: 600;
+}
