@@ -42,7 +42,17 @@ export function chunkMap(bytes: Uint8Array, meta: MapMeta, room: string): MapChu
   const out: MapChunk[] = [];
   for (let i = 0; i < n; i++) {
     const slice = bytes.subarray(i * MAP_CHUNK_BYTES, (i + 1) * MAP_CHUNK_BYTES);
-    out.push({ k: "map.chunk", room, hash: meta.hash, i, n, mime: meta.mime, w: meta.w, h: meta.h, data: bytesToBase64(slice) });
+    out.push({
+      k: "map.chunk",
+      room,
+      hash: meta.hash,
+      i,
+      n,
+      mime: meta.mime,
+      w: meta.w,
+      h: meta.h,
+      data: bytesToBase64(slice),
+    });
   }
   return out;
 }
@@ -51,17 +61,30 @@ export interface AssembledMap extends MapMeta {
   bytes: Uint8Array;
 }
 
-export type AssembleResult = { status: "partial" } | { status: "complete"; map: AssembledMap } | { status: "mismatch"; hash: string } | { status: "rejected" };
+export type AssembleResult =
+  | { status: "partial" }
+  | { status: "complete"; map: AssembledMap }
+  | { status: "mismatch"; hash: string }
+  | { status: "rejected" };
 
 /** Collects chunks per hash; `push` resolves once the last chunk lands and the hash verifies. */
 export function createMapAssembler() {
-  const pending = new Map<string, { parts: (Uint8Array | undefined)[]; n: number; meta: MapMeta; bytes: number; filled: number }>();
+  const pending = new Map<
+    string,
+    { parts: (Uint8Array | undefined)[]; n: number; meta: MapMeta; bytes: number; filled: number }
+  >();
   return {
     async push(chunk: MapChunk): Promise<AssembleResult> {
       if (chunk.i >= chunk.n) return { status: "rejected" };
       let entry = pending.get(chunk.hash);
       if (!entry || entry.n !== chunk.n) {
-        entry = { parts: new Array<Uint8Array | undefined>(chunk.n).fill(undefined), n: chunk.n, meta: { hash: chunk.hash, mime: chunk.mime, w: chunk.w, h: chunk.h }, bytes: 0, filled: 0 };
+        entry = {
+          parts: new Array<Uint8Array | undefined>(chunk.n).fill(undefined),
+          n: chunk.n,
+          meta: { hash: chunk.hash, mime: chunk.mime, w: chunk.w, h: chunk.h },
+          bytes: 0,
+          filled: 0,
+        };
         pending.set(chunk.hash, entry);
       }
       if (entry.parts[chunk.i]) return { status: "partial" };

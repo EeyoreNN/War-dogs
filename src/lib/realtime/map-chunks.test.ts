@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { base64ToBytes, bytesToBase64, chunkMap, createMapAssembler, MAP_CHUNK_BYTES, sha256Hex } from "./map-chunks";
+import {
+  base64ToBytes,
+  bytesToBase64,
+  chunkMap,
+  createMapAssembler,
+  MAP_CHUNK_BYTES,
+  sha256Hex,
+} from "./map-chunks";
 import { parseWire } from "./schema";
 
 describe("map chunks", () => {
@@ -16,7 +23,9 @@ describe("map chunks", () => {
       const frame = JSON.stringify(c);
       expect(parseWire(frame, frame.length)).not.toBeNull();
     }
-    expect(chunkMap(new Uint8Array(0), { hash, mime: "image/jpeg", w: 1, h: 1 }, "R").length).toBe(1);
+    expect(chunkMap(new Uint8Array(0), { hash, mime: "image/jpeg", w: 1, h: 1 }, "R").length).toBe(
+      1,
+    );
   });
   it("assembles out of order, verifies the hash, and reports mismatches", async () => {
     const bytes = new Uint8Array(MAP_CHUNK_BYTES + 10).fill(7);
@@ -29,7 +38,11 @@ describe("map chunks", () => {
     expect(done.status).toBe("complete");
     if (done.status === "complete") expect(done.map.bytes).toEqual(bytes);
     expect(asm.size).toBe(0);
-    const wrong = chunkMap(bytes, { hash: "a".repeat(64), mime: "image/jpeg", w: 1024, h: 1024 }, "R");
+    const wrong = chunkMap(
+      bytes,
+      { hash: "a".repeat(64), mime: "image/jpeg", w: 1024, h: 1024 },
+      "R",
+    );
     await asm.push(wrong[0]);
     expect(await asm.push(wrong[1])).toEqual({ status: "mismatch", hash: "a".repeat(64) });
     expect(await asm.push({ ...chunks[0], i: 9 })).toEqual({ status: "rejected" });
