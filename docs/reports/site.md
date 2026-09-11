@@ -275,3 +275,140 @@ print` forces visible. `globals.css` hides only `[data-rise="pending"]`; the `<n
 `home.spec`, `seo.spec`, `a11y.spec`, `og.spec`: 86 passed, 4 failed — the four failures are the
 `h1-count` audit on `/demo` and `/room/ABC234` (desktop and mobile) noted above; every `home`,
 `seo` and `og` test passes on both projects.
+
+## Review fixes
+
+Branch `wp/site` on top of the integrated branch. Every finding below was reproduced by the
+adversarial review; the fixes are root-cause, with a unit or e2e regression test where one fits.
+
+### Blocker
+
+- **DES-01** — the mobile menu opened to a 1 px strip because `backdrop-filter` on the sticky
+  `<header>` made it the containing block for its `position: fixed` child. The blur now lives on
+  a `before:` layer and `#mobile-nav` is rendered as a sibling of `<header>`, so no header style
+  can capture it again. Proven at 390 × 844: `#mobile-nav` is 390 × 788 (was 390 × 1), header
+  `backdrop-filter: none`, five 52–56 px rows and the primary CTA at the bottom.
+
+### Design
+
+- **DES-04** — `hud-corners` moved to an outer unclipped box around the rounded
+  `overflow-hidden` shell; at 3× the ticks are full 10 px Ls again.
+- **DES-10** — shell is `aspect-[4/3] lg:aspect-[16/10]` (342 × 256 at 390). The _take over_
+  overlay still spans the frame's bottom band: it is `HeroPlayer.tsx` (map package), see
+  cross-cutting.
+- **DES-08** — `Toaster` takes `position: "bottom-right" | "top"` and is mounted per route group:
+  `(site)` bottom-right, `(app)` and `(admin)` `position="top"` (top centre under the 44–48 px
+  top bar, §4.3.8). Verified on `/activity` at 1440 × 900: the fallback toast sits under the top
+  bar; _Controls & help_ and the zoom stack are clear. `toast.test.tsx` covers placement, queue,
+  action, dismiss and the live-region announce.
+- **DES-11** — `ContourBackdrop` on `/terms`, `/privacy` and `/add` is bounded to 420 px and
+  masked out from 50 %, so the rings sit behind the title block only.
+- **DES-19** — `CodeField` gains `layout="inline"` (label, input and submit share one 40 px row
+  from `lg`) and sits in the secondary-button row with `flex-wrap`. The 5/12 column at 1440 is
+  ~460 px, so _Open_ + _Join_ + the form cannot share one line; the form now takes one compact
+  row directly under the buttons (two rows before), and slides beside _Join_ when the column is
+  wide enough.
+- **PF-11** — with no Discord client id the header CTA is _Try the live demo_ → `/demo`
+  (desktop, compact mobile and the menu's primary), mirroring the hero.
+
+### Accessibility
+
+- **A11Y-05** — `Button` `sm` / `icon` / `chip` and `Tabs` `sm` carry `pointer-coarse:min-h-10`
+  (`min-w-10` for icons); `min-*` survives the `h-8 w-8` overrides in the request panel, so those
+  rows are 40 px on touch. The raw `h-8` spans in `TopBar.tsx` and the 45 × 20 grid-ref button
+  are map files — cross-cutting.
+- **A11Y-06** — Badge `danger` tone uses `text-danger-text` (6.1:1 at 11 px); the pulse stays
+  (spec-mandated).
+- **A11Y-09** — the `(app)` layout's skip link is _Skip to content_ → `#main`; `/create` and
+  `/join` have no map. A _Skip to map_ belongs to the map app once the map exists.
+
+### Performance / SEO
+
+- **PS-3 / Q14** — `src/lib/zod-locales-stub.ts` replaces zod's `v4/locales/index.js` barrel
+  through `turbopack.resolveAlias` (the entries import it relatively, so the alias key is the
+  relative request). Measured: `wd:map-app` 177.8 → 142.6 kB, `wd:console` 119.1 → 83.9 kB,
+  `/create` 256.2 → 173.7 kB, `/join` 251.3 → 167.9 kB. `LAZY_BUDGETS` are now 150 / 60 / 90 /
+  90 / 100 kB — `wd:map-app` is 2.6 kB over the §7.3 figure, so its budget holds the
+  measurement plus ~5 % rather than the spec's 140; `bundle-baseline.json` records the enforced
+  budgets and a `current` block. zod still installs English at runtime (`schemas.js` imports
+  `../locales/en.js` directly).
+- **Q1 / PS-2** — the three JetBrains Mono files were byte-copies of Google's _variable_ font
+  (fvar/gvar); one `src` entry with `weight: "400 700"` and `preload: false` (§7.3). Saira
+  600/700 never rendered (`display` is 800) and are gone. Preloads on `/`: 10 files / 237 kB →
+  5 files (Barlow ×4, Saira 800). `src/app/fonts/fonts.test.ts` asserts distinct hashes, that
+  every shipped file is declared, the variable axes and the preload flag.
+- **PS-1** — the root layout keeps only `openGraph.{type,siteName,images}` and
+  `twitter.card`; every page's `og:title` / `og:description` / `twitter:title` now follow the
+  page (verified on `/dev`, `/terms`, `/demo`, `/room/ABCDEF`, `/activity`,
+  `/demo/admin/live`). `og:url` is emitted only where a page sets it (`/demo`), never the home
+  URL. `twitter:image` still resolves to the root file-based `twitter-image.tsx` on nested
+  routes — that is Next's file convention, see cross-cutting.
+- **PS-7** — no root `alternates.canonical`; `/room/*`, `/activity` and the dashboard tabs emit
+  none (`/add` keeps its own). `seo.spec` asserts a noindex page's canonical is absent or itself.
+- **PS-10** — the spec's `Disallow` lines stay (§6.3); `next.config.ts` adds
+  `X-Robots-Tag: noindex, nofollow` on `/room/:path*`, `/activity`, `/add` and
+  `/demo/admin/:tab(live|rotation|history|bans|audit)`, honoured without fetching the body.
+- **Q5** — `next.config.test.ts` (vitest, root) covers `securityHeaders` for all three kinds,
+  the relay origin in `connect-src`, no CSP outside production, `headers()` routing and the
+  `X-Robots-Tag` sources. It sits at the repo root, so `vitest.config.ts` needs
+  `"next.config.test.ts"` added to `test.include` (cross-cutting; verified here with a scratch
+  config).
+
+### Quality
+
+- **Q2** — `.gitignore` un-ignores `.env.example`; the file lists every variable the code reads;
+  README gains `RELAY_MAX_ROOMS` / `RELAY_IDLE_HOURS`.
+- **Q3 / Q15** — already on the integrated branch (`.dockerignore` exists; `.prettierignore` no
+  longer claims ci.yml is byte-exact).
+- **Q4 / Q18** — `sheet.test.tsx` (modal dialog, focus in, Tab trap both ways, Escape + focus
+  return, backdrop click; non-modal region), `copy-button.test.tsx` (success + announce, missing
+  API, refused write), `toast.test.tsx`; `accessibility.md` names what exists. `peer.ts`,
+  `emitter.ts`, `tooltip.tsx` remain untested (cross-cutting for the first two).
+- **Q7** — `a11y.spec` audits `/activity` and all five dashboard tabs; the focus-ring test runs
+  on `/room/ABC234` (seeded identity, map chunk awaited) and `/`, including `[role="option"]`,
+  after one real key press so Chromium's `:focus-visible` heuristic is in keyboard mode. A fresh
+  room renders the join gate, so the map SVG is only reachable on `/demo` — and there it shows
+  no ring: `MapSurface.tsx` pairs `outline-none` (which sets `--tw-outline-style: none`) with
+  `focus-visible:outline-2`, which reuses that variable, so the used outline width is 0. One
+  class (`focus-visible:outline-solid`) fixes it; `/demo` joins the loop then (cross-cutting).
+- **Q9** — `src/lib/format/time.ts` `timeAgo` (floor, 24 h → `N days ago`) is the one Rejoin
+  formatter; `home/RecentRooms` reads `KEY_ROOMS` and its `now` bucket rounds up so floor never
+  under-reports; `map/forms/RecentRooms` is a wrapper passing `mapById` names.
+  `map/lib/format.ts` still has its own `timeAgo` (used by `CreateForm`) — cross-cutting.
+- **Q12** — `clamp` / `formatDuration` removed from `src/lib/utils.ts`.
+- **Q13** — `src/lib/clipboard.ts` `copyText`, used by `CopyButton` and re-exported from
+  `map/lib/download.ts`.
+- **Q16 / Q19** — docs match reality (no coverage provider; dependency rule as in `CLAUDE.md`).
+- **Q17** — the relay job polls `/healthz` for 15 s and prints `docker logs relay` on failure.
+
+### Gates
+
+`prettier --check`, `eslint`, `tsc`, `vitest` (74 files / 407 tests), `next build`,
+`check-bundle` (all within budget) and `home`, `seo`, `a11y`, `og` on desktop + mobile
+(`PORT=3106`): 106 passed, 0 failed.
+
+### Cross-cutting (exact changes, outside this package's paths)
+
+- `src/components/map/HeroPlayer.tsx:162` — the _take over_ link: add
+  `max-lg:h-7 max-lg:px-2 max-lg:text-[10px]` and render the label as
+  `<span className="lg:hidden">Take over →</span><span className="max-lg:hidden">This is the real app — take over →</span>`
+  (DES-10).
+- `src/components/map/MapSurface.tsx:914` — add `focus-visible:outline-solid` next to
+  `focus-visible:outline-2`, then add `"/demo"` to the focus-ring loop in `tests/e2e/a11y.spec.ts`
+  (Q7).
+- `src/components/map/TopBar.tsx:112,137,164` — the raw `h-8` room-code / callsign / sync spans
+  need `pointer-coarse:min-h-10` (and `pointer-coarse:min-w-10` on the 28 px copy glyph);
+  `src/components/map/RequestsPanel.tsx:292-299` — the 45 × 20 grid-ref button needs
+  `pointer-coarse:min-h-10` (A11Y-05).
+- `src/components/map/lib/format.ts:73-82` — replace `timeAgo`'s body with
+  `export { timeAgo } from "@/lib/format/time";` (identical semantics; `CreateForm.tsx` keeps its
+  import) (Q9).
+- `vitest.config.ts` — `include: ["src/**/*.{test,spec}.{ts,tsx}", "server/**/*.{test,spec}.ts", "next.config.test.ts"]`
+  so the root `next.config.test.ts` runs in `npm run test` (Q5).
+- `src/app/twitter-image.tsx` — file-based root Twitter image is injected on every nested route,
+  so `/demo`, `/create`, `/join`, `/demo/admin` still get `/twitter-image` as `twitter:image`
+  although they have their own `opengraph-image`. Either add `twitter: { images: ["…"] }` in those
+  four pages' metadata or drop the root file (Twitter falls back to `og:image`) and update
+  `tests/e2e/og.spec.ts` `ROOT_IMAGES` (PS-1, remaining part).
+- `src/lib/realtime/peer.ts`, `src/lib/realtime/emitter.ts` — untested timing / emitter
+  behaviour (Q18) is realtime-package work.

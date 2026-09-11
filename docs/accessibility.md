@@ -2,8 +2,7 @@
 
 Manual checklist for wardogs.tech (spec §7.4). The automated parts live in
 `src/lib/a11y/contrast.test.ts` (unit), `tests/e2e/a11y.spec.ts` (structural audit on every route
-including `/activity` and the five dashboard tabs, skip link, visible focus on `/`, `/demo` and
-`/room/[code]` down to the NodeList options) and the component tests next to `Button`, `Dialog`,
+including `/activity` and the five dashboard tabs, skip link, visible focus on `/` and `/room/[code]` including `[role="option"]`) and the component tests next to `Button`, `Dialog`,
 `Tabs`, `Sheet`, `CodeInput`, `CopyButton`, `LiveRegion` and `Toast` under `src/components/ui/`.
 Tick the rest by hand before a release.
 

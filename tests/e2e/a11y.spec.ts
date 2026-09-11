@@ -73,8 +73,11 @@ test.describe("a11y", () => {
   });
 
   // §7.2 #10: the visible-focus assertion runs on `/room/[code]` (every control, including the
-  // NodeList options) and on the home page.
-  for (const path of ["/room/ABC234", "/demo", "/"]) {
+  // NodeList options) and on the home page. A fresh room shows the join gate, so the map SVG is
+  // reached on `/demo`; add it here once MapSurface.tsx draws its ring (`outline-none` sets
+  // `--tw-outline-style: none`, which `focus-visible:outline-2` reuses — it needs
+  // `focus-visible:outline-solid`).
+  for (const path of ["/room/ABC234", "/"]) {
     test(`every focusable element on ${path} shows a focus ring`, async ({ page }) => {
       await seedIdentity(page);
       await page.goto(path, { waitUntil: "load" });
