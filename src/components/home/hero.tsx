@@ -94,7 +94,11 @@ export function Hero() {
                   <MapIcon size={16} aria-hidden="true" />
                   Open a war room
                 </ButtonLink>
-                <ButtonLink href="/join" variant="secondary" className="text-[12px] sm:text-[13px]">
+                <ButtonLink
+                  href="/join"
+                  variant="secondary"
+                  className="gap-1.5 px-3 text-[12px] sm:gap-2 sm:px-5 sm:text-[13px]"
+                >
                   Join a war room
                   <ArrowRight size={16} aria-hidden="true" />
                 </ButtonLink>
