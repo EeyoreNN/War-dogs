@@ -66,6 +66,19 @@ export function securityHeaders(kind: HeaderKind, isProd: boolean): Header[] {
   return headers;
 }
 
+/**
+ * Routes robots.txt disallows (§6.3) also carry `<meta name="robots" content="noindex">` (§6.1),
+ * but a crawler never fetches a disallowed URL, so the meta alone cannot stop a pasted room link
+ * from being indexed as a bare URL. `X-Robots-Tag` is honoured from the response headers
+ * without reading the body. `/r/:code` and `/terrain/` serve no HTML and need nothing here.
+ */
+export const NOINDEX_SOURCES = [
+  "/room/:path*",
+  "/activity",
+  "/add",
+  "/demo/admin/:tab(live|rotation|history|bans|audit)",
+];
+
 const isProd = process.env.NODE_ENV === "production";
 
 const nextConfig: NextConfig = {
@@ -76,6 +89,13 @@ const nextConfig: NextConfig = {
   // `next dev` refuses cross-origin dev resources; both loopback spellings are used locally.
   allowedDevOrigins: ["127.0.0.1", "localhost"],
   images: { formats: ["image/avif", "image/webp"] },
+  turbopack: {
+    resolveAlias: {
+      // zod's entries `export * as locales from "../locales/index.js"`: the namespace export drags
+      // all 64 locale tables into the shared chunk (§7.3). The stub ships only `en`.
+      "../locales/index.js": "./src/lib/zod-locales-stub.ts",
+    },
+  },
   async headers() {
     // Later entries override earlier ones per header key, so the specific routes come last.
     return [
@@ -83,6 +103,10 @@ const nextConfig: NextConfig = {
       { source: "/rcon-api(.*)", headers: securityHeaders("console", isProd) },
       // The Discord Activity route must be embeddable inside discord.com; everything else is not.
       { source: "/activity(.*)", headers: securityHeaders("activity", isProd) },
+      ...NOINDEX_SOURCES.map((source) => ({
+        source,
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      })),
     ];
   },
   async redirects() {

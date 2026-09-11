@@ -46,6 +46,53 @@ test.describe("seo", () => {
     }
   });
 
+  test("each page unfurls as itself: og:title / twitter:title follow the page, not the home page", async ({
+    page,
+  }) => {
+    const meta = async (sel: string) => page.locator(sel).first().getAttribute("content");
+    await page.goto("/");
+    const homeTitle = await meta('meta[property="og:title"]');
+    expect(homeTitle).toMatch(/^wardogs\.tech — /);
+    for (const [path, title] of [
+      ["/dev", /^Run your server/],
+      ["/terms", /^Terms of Service/],
+      ["/demo", /^The live demo/],
+      ["/room/ABC234", /^War room/],
+    ] as const) {
+      await page.goto(path);
+      expect(await meta('meta[property="og:title"]'), path).toMatch(title);
+      expect(await meta('meta[name="twitter:title"]'), path).toMatch(title);
+      expect(await meta('meta[property="og:description"]'), path).not.toBe(
+        "Draw the plan. Call the drop. Everyone sees it.",
+      );
+    }
+    // A page that sets `openGraph.url` keeps it; nothing inherits the home page's URL.
+    await page.goto("/demo");
+    expect(new URL((await meta('meta[property="og:url"]')) ?? "", siteUrl).pathname).toBe("/demo");
+    await page.goto("/dev");
+    await expect(page.locator('meta[property="og:url"]')).toHaveCount(0);
+  });
+
+  test("noindex pages carry no canonical (never the home page's) and an X-Robots-Tag", async ({
+    page,
+    request,
+  }) => {
+    for (const path of ["/room/ABC234", "/activity", "/demo/admin/live", "/add"]) {
+      await page.goto(path);
+      // A noindex page either has no canonical or points at itself (/add, §6.1) — never at `/`.
+      const canonical = await page
+        .locator('link[rel="canonical"]')
+        .evaluateAll((els) => els.map((el) => el.getAttribute("href") ?? ""));
+      for (const href of canonical) expect(new URL(href, siteUrl).pathname, path).toBe(path);
+      const res = await request.get(path);
+      expect(res.headers()["x-robots-tag"], path).toBe("noindex, nofollow");
+    }
+    for (const path of ["/", "/demo", "/demo/admin"]) {
+      const res = await request.get(path);
+      expect(res.headers()["x-robots-tag"], path).toBeUndefined();
+    }
+  });
+
   test("noindex on room routes, /add and the 404", async ({ page }) => {
     for (const path of ["/room/ABC234", "/add", "/this-does-not-exist"]) {
       await page.goto(path);

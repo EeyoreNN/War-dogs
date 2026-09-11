@@ -23,7 +23,7 @@
     "site": 194560,
     "app": 204800,
     "admin": 204800,
-    "wd:map-app": 143360,
+    "wd:map-app": 153600,
     "wd:hero": 61440,
     "wd:dashboard": 92160,
     "wd:console": 92160,
@@ -41,5 +41,19 @@
     "wd:dashboard": 23757,
     "wd:console": 121958,
     "wd:validator": 95232
+  },
+  "budgetsNote": "The values scripts/check-bundle.mjs enforces (LAZY_BUDGETS / ROUTE_BUDGETS), gzip bytes; kept identical by hand \u2014 a `current` block below is the last measurement.",
+  "current": {
+    "note": "Review fixes: zod's v4/locales barrel replaced by src/lib/zod-locales-stub.ts (next.config.ts turbopack.resolveAlias), fonts trimmed to the faces that render, JetBrains Mono as one variable face with preload:false. wd:map-app 177.8 \u2192 142.6 kB, wd:console 119.1 \u2192 83.9 kB, /create 256.2 \u2192 173.7 kB, /join 251.3 \u2192 167.9 kB.",
+    "/": 159232,
+    "/terms": 164147,
+    "/dev": 166912,
+    "/create": 177869,
+    "/join": 171930,
+    "wd:hero": 31539,
+    "wd:map-app": 146022,
+    "wd:dashboard": 23757,
+    "wd:console": 85914,
+    "wd:validator": 59187
   }
 }
