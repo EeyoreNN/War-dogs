@@ -1,31 +1,44 @@
 name: ci
-on: { push: { branches: [main] }, pull_request: {} }
-concurrency: { group: ci-${{ github.ref }}, cancel-in-progress: true }
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   # One value for build and e2e: NEXT_PUBLIC_* is baked in at build time.
   NEXT_PUBLIC_SITE_URL: "http://127.0.0.1:3100"
   # The production CSP only admits this relay origin; the e2e job starts a relay on 8787.
   NEXT_PUBLIC_RELAY_URL: "ws://127.0.0.1:8787"
+
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
+        with:
+          node-version: 22
+          cache: npm
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run format:check
       - run: npm run test
-      - run: npm run build:relay        # also enforces the relative-import rule (§3.0)
+
   build:
     runs-on: ubuntu-latest
     needs: check
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
+        with:
+          node-version: 22
+          cache: npm
       - run: npm ci
       - run: npm run build
       - run: node scripts/check-bundle.mjs
@@ -37,26 +50,39 @@ jobs:
             !.next/cache
           retention-days: 1
           include-hidden-files: true
+
   e2e:
     runs-on: ubuntu-latest
     needs: build
-    env: { PW_NO_BUILD: "1", CI: "true" }
+    env:
+      PW_NO_BUILD: "1"
+      CI: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
+        with:
+          node-version: 22
+          cache: npm
       - run: npm ci
       - uses: actions/download-artifact@v4
-        with: { name: next-build, path: .next }
+        with:
+          name: next-build
+          path: .next
       - run: npx playwright install --with-deps chromium
-      - run: npm run e2e                # playwright.config starts `next start` and the relay
+      - run: npm run e2e
       - uses: actions/upload-artifact@v4
         if: failure()
-        with: { name: playwright-traces, path: test-results }
+        with:
+          name: playwright-traces
+          path: test-results
+
   relay:
     runs-on: ubuntu-latest
     needs: check
     steps:
       - uses: actions/checkout@v4
       - run: docker build -f server/Dockerfile -t wardogs-relay .
-      - run: docker run -d -p 8787:8787 -e RELAY_ALLOWED_ORIGINS='*' --name relay wardogs-relay && sleep 3 && curl -fsS http://127.0.0.1:8787/healthz
+      - run: |
+          docker run -d -p 8787:8787 -e RELAY_ALLOWED_ORIGINS='*' --name relay wardogs-relay
+          sleep 3
+          curl -fsS http://127.0.0.1:8787/healthz

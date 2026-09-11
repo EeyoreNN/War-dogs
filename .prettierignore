@@ -11,8 +11,6 @@ src/lib/brand/mark.ts
 # The spec is read-only during the build (§8.2); nobody reformats it.
 docs/SPEC.md
 
-# The CI workflow is copied byte-exact from the spec (§7.5); its flow-style YAML is not Prettier-formatted.
-.github/workflows/ci.yml
 src/lib/terrain/types.ts
 src/lib/map/types.ts
 src/lib/map/keys.ts
