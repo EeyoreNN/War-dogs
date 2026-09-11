@@ -8,15 +8,18 @@
     "dev:all": "concurrently -n web,relay -c cyan,yellow \"npm:dev\" \"npm:dev:relay\"",
     "build": "next build",
     "start": "next start",
-    "start:relay": "tsx server/relay.ts",
+    "build:relay": "tsc -p server/tsconfig.json",
+    "start:relay": "node server/dist/server/relay.js",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
+    "e2e:ci": "PW_NO_BUILD=1 playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run typecheck && npm run lint && npm run test"
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "check:bundle": "node scripts/check-bundle.mjs"
   },
   "dependencies": {
     "@discord/embedded-app-sdk": "^2.5.0",

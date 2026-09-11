@@ -20,6 +20,9 @@
 # production
 /build
 
+# relay build output (npm run build:relay)
+/server/dist
+
 # misc
 .DS_Store
 *.pem

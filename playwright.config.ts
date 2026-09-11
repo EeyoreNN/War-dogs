@@ -25,12 +25,22 @@ export default defineConfig({
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
     { name: "mobile", use: { ...devices["Pixel 7"] } },
   ],
-  webServer: {
-    command: process.env.PW_NO_BUILD
-      ? `npx next start -p ${port}`
-      : `npm run build && npx next start -p ${port}`,
-    url: `http://127.0.0.1:${port}`,
-    reuseExistingServer: !process.env.CI,
-    timeout: 240_000,
-  },
+  webServer: [
+    {
+      command: process.env.PW_NO_BUILD
+        ? `npx next start -p ${port}`
+        : `npm run build && npx next start -p ${port}`,
+      url: `http://127.0.0.1:${port}`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 240_000,
+    },
+    // The relay (§7.5), so the sync journeys have a real WebSocket server without Docker.
+    {
+      command: "npx tsx server/relay.ts",
+      port: 8787,
+      env: { RELAY_PORT: "8787", RELAY_ALLOWED_ORIGINS: `http://127.0.0.1:${port}` },
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+    },
+  ],
 });

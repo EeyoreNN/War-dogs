@@ -4,3 +4,9 @@ out
 coverage
 package-lock.json
 public/openapi.json
+server/dist
+# Verbatim contract files keep the spec's bytes (§3.0).
+src/lib/brand/mark.ts
+
+# The spec is read-only during the build (§8.2); nobody reformats it.
+docs/SPEC.md

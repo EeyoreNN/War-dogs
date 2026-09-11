@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Relay build output (§7.1).
+    "server/dist/**",
   ]),
 ]);
 
