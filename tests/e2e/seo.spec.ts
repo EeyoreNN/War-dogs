@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://127.0.0.1:3100";
+// Mirrors playwright.config.ts: the build gets NEXT_PUBLIC_SITE_URL = the server it starts.
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? `http://127.0.0.1:${process.env.PORT ?? 3100}`;
 
 test.describe("seo", () => {
   test("sitemap lists the public routes with absolute URLs", async ({ request }) => {
@@ -40,7 +41,8 @@ test.describe("seo", () => {
     for (const path of ["/", "/terms", "/privacy"]) {
       await page.goto(path);
       const href = await page.locator('link[rel="canonical"]').getAttribute("href");
-      expect(href).toBe(new URL(path, siteUrl).toString());
+      // Next emits the root canonical without a trailing slash; compare as URLs, not strings.
+      expect(new URL(href ?? "", siteUrl).href, path).toBe(new URL(path, siteUrl).href);
     }
   });
 

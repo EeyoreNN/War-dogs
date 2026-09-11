@@ -12,6 +12,13 @@
     "/terms": 158310,
     "/privacy": 158310
   },
+  "phase2": {
+    "note": "WP6 Phase 2 on the integrated build (WP1/WP2/WP4/WP5 merged; WP3 hero and app routes not yet): home reads @/lib/room/code + @/lib/storage/rooms, rise reveal visible-by-default. /dev (WP5) is over the site budget at 248.1 kB; the other (site) routes are 154-158 kB.",
+    "/": 157388,
+    "/terms": 158003,
+    "/privacy": 158003,
+    "/dev": 254054
+  },
   "budgets": {
     "site": 194560,
     "app": 204800,

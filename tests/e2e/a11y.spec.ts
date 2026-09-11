@@ -72,8 +72,9 @@ const ROUTES = [
 ];
 
 async function audit(page: Page, path: string) {
-  await page.goto(path);
-  await page.waitForLoadState("networkidle");
+  // `load`, not `networkidle`: link prefetches to routes that are not built yet never settle,
+  // and the audit reads the server-rendered structure (§7.2 #10), not network state.
+  await page.goto(path, { waitUntil: "load" });
   return page.evaluate(auditInPage);
 }
 

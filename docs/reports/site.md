@@ -155,3 +155,71 @@ horizontal scroll at either width; structural a11y audit and focus-ring check cl
   build.
 - **Bundle check for the lazy bundles** reports "not present in this build" until the
   `data-bundle` markers land (WP3 / WP4).
+
+## Phase 2 (integration fixes)
+
+Worktree `wp/site` merged `claude/wardogs-clone-improvement-agc9oe` (fast-forward; WP1, WP2, WP4,
+WP5 in the tree; WP3 not yet). Gates in the worktree: `npm run lint`, `npm run typecheck`,
+`npm run test` (55 files / 325 tests), `npm run build`, `node scripts/check-bundle.mjs`.
+
+### Done
+
+- **Rise reveal is no longer script-dependent.** `src/components/site/motion.tsx` renders every
+  `[data-rise]` element as `in` (visible) on the server. At hydration only elements whose top is
+  below `innerHeight` are switched to `pending` and observed (`rootMargin -10%`, once); a 1.5 s
+  safety timer (`RISE_SAFETY_MS`) reveals them regardless, and the effect's cleanup restores `in`.
+  Reduced motion never enters `pending` (CSS: 120 ms opacity only if it somehow did); `@media
+print` forces visible. `globals.css` hides only `[data-rise="pending"]`; the `<noscript>` style
+  on the home page is gone (nothing to undo). Verified on the integrated build with
+  `scrollshoot.mjs`: `riseTotal 9 / riseHidden 0` at 1440 and 390 after scrolling, and a plain
+  full-page screenshot without scrolling shows every section (all nine `in` after 2 s).
+- **WP1 modules replace the stub.** `code-field.tsx`, `logic.ts`, `RecentRooms.tsx` and
+  `logic.test.ts` import `@/lib/room/code` (`normalizeCode`, `isRoomCode`, `isReservedCode`) and
+  `@/lib/storage/rooms` (`listRecentRooms`, `forgetRoom`; `RecentRoom` from `@/lib/map/types`).
+  `src/components/home/room-api.stub.ts` is deleted. The home fixtures (`Lonestar` /
+  `zestafona` / `default` / `commander`) pass WP1's stricter guard.
+- **e2e fixes.** `home.spec`: the bad-code assertion targets `#hero-code-error` (role=alert +
+  `aria-describedby`) instead of `getByRole("alert")`, which also matched Next's route announcer.
+  `seo.spec`: `siteUrl` follows `PORT` like `playwright.config.ts`; the canonical check compares
+  URLs (Next emits the root canonical without a trailing slash); the noindex check reads every
+  `meta[name=robots]` and requires each to say `noindex` (Next adds its own on not-found; the
+  §6.1 metadata one stays). `a11y.spec`: the audit waits for `load` instead of `networkidle`
+  (link prefetches to routes that are not built yet never settle). `src/lib/a11y/audit.ts` is
+  not in the tree yet, so the inline `auditInPage` stays.
+- **README** relay section now carries WP1's requested text (`npm run dev:relay` /
+  `docker compose up relay`, `RELAY_PORT` fallback, `RELAY_MAX_ROOMS`, `RELAY_IDLE_HOURS`,
+  `RELAY_ALLOWED_ORIGINS`, `/healthz`, the `wardogs:relay` localStorage override and `"off"`).
+- Other WP6-targeted requests checked: `.prettierignore` already lists every verbatim contract
+  file (`src/lib/geo.ts` is prettier-clean, so not needed); `next.config.ts` already has
+  `allowedDevOrigins: ["127.0.0.1", "localhost"]`; `sitemap.ts` already lists the docs routes;
+  the root OG routes exist. WP5's optional `#site-before-header` slot was not added (not needed
+  for the current layout, per their note).
+- Hero: `HeroFrameShell` keeps the `Skeleton` placeholder; the slot (`relative min-h-0 flex-1`)
+  fills the frame and takes `<HeroFrame><HeroStatic/></HeroFrame>` unchanged once WP3 lands.
+- Bundle: `/` first-load 153.7 kB gz (budget 190 kB; Phase 1 was 156.9 kB). Recorded as
+  `phase2` in `scripts/bundle-baseline.json`.
+- e2e on the integrated build (`PORT=3106`, relay on 8787 started by the config):
+  `seo.spec` + `a11y.spec` 50/50 passed; `home.spec` 10/12 passed.
+
+### Not done / blocked
+
+- `home.spec` "hero copy, CTAs and no console errors" fails on the integrated build (desktop and
+  mobile) with three `404` console errors: Next prefetches the hero links `/demo`, `/create`,
+  `/join`, and those routes are WP3's and not merged yet. The assertion is correct and left
+  strict; it passes once WP3's `(app)` routes exist. (The same missing routes are why
+  `networkidle` never settles.)
+- `/dev` is over the `(site)` first-load budget: 248.1 kB vs 190 kB (WP5's page). Not WP6's
+  file; see requests.
+- Visual QA at 1440 and 390 (`/`, `/add`, `/terms`, 404): no overflow (the reported wide
+  `path`s are inside the clipped `ContourBackdrop` SVG; `scrollWidth == clientWidth`), nothing
+  to polish.
+
+### Requests to other packages
+
+- **WP3**: land `/demo`, `/create`, `/join` (and `/room/[code]`) — the home hero links and
+  `home.spec`'s console-error assertion depend on them. `HeroFrameShell`'s child slot is ready
+  for `<HeroFrame><HeroStatic/></HeroFrame>`.
+- **WP5 (`src/app/(site)/dev/page.tsx`)**: first-load JS is 248.1 kB against the 190 kB site
+  budget (`node scripts/check-bundle.mjs` reports `OVER`); the other `(site)` routes sit at
+  154–158 kB, so roughly 90 kB of client code is entering through that page — a `dynamic()`
+  import for the heavy client piece should bring it back.
