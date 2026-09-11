@@ -321,7 +321,10 @@ export default function MapApp(props: MapAppProps) {
           </>
         ) : booted || mode === "demo" ? (
           <div className="flex flex-1 flex-col">
-            <div className="h-11 border-b border-line bg-bg-1 md:h-12" />
+            {/* No plan yet: the bar keeps its height and the honest pill (LOCAL explains why). */}
+            <div className="flex h-11 items-center justify-end border-b border-line bg-bg-1 px-3 md:h-12">
+              <SyncPill compact={isMobile} />
+            </div>
             <StateDialogs />
           </div>
         ) : null}

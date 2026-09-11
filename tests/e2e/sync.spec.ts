@@ -65,20 +65,24 @@ test.describe("sync (a) LOCAL — two tabs of one browser", () => {
     await placeMarker(a, 0.4, 0.4);
     await expect.poll(() => markers(b).count(), { timeout: 1_000 }).toBe(before + 1);
 
-    // Create a request in B, claim it in A, deliver it in B.
+    // Create a request in B (the kind picker is a radiogroup; Fuel is the default), claim it in
+    // A, deliver it in B.
     await b.keyboard.press("n");
-    await b
-      .getByRole("dialog", { name: /new request/i })
-      .getByRole("button", { name: /^fuel$/i })
-      .click();
-    await b.getByRole("button", { name: /no location/i }).click();
+    const newRequest = b.getByRole("dialog", { name: /new request/i });
+    await newRequest.getByRole("radio", { name: /^fuel/i }).click();
+    await newRequest.getByRole("button", { name: /no location/i }).click();
     const cardA = a.getByRole("listitem").filter({ hasText: /fuel/i }).first();
     await expect(cardA).toBeVisible();
     await cardA.getByRole("button", { name: /^claim$/i }).click();
     const cardB = b.getByRole("listitem").filter({ hasText: /fuel/i }).first();
     await expect(cardB).toContainText(/claimed/i);
     await cardB.getByRole("button", { name: /^delivered$/i }).click();
-    await expect(cardA).toContainText(/delivered/i);
+    // ALL shows open + claimed only (a just-delivered card lingers there for 8 s); DONE is the
+    // contract's home for delivered requests.
+    await a.getByRole("tab", { name: /done/i }).click();
+    await expect(a.getByRole("listitem").filter({ hasText: /fuel/i }).first()).toContainText(
+      /delivered/i,
+    );
 
     // Same browser = same client id: closing B leaves the one member online in A.
     await b.close();
