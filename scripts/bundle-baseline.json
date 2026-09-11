@@ -1,6 +1,6 @@
 {
   "measuredAt": "2026-09-11",
-  "how": "node scripts/check-bundle.mjs after `next build` (Next 16.3, React 19, Turbopack): module scripts referenced by the prerendered HTML, gzip level 9; the noModule polyfill chunk is not counted.",
+  "how": "node scripts/check-bundle.mjs after `next build` (Next 16.3, React 19, Turbopack): module scripts referenced by the prerendered HTML, gzip level 9; the noModule polyfill chunk is not counted. Lazy bundles: the entry chunk found by its data-bundle marker plus the sibling chunks named beside it in the parent's Turbopack async loader list and everything they reference, minus the chunks the loading page already has in its first-load scripts (largest cost across parents).",
   "scaffold": {
     "note": "Phase 0 scaffold: fonts, header, the two-CTA hero placeholder.",
     "/": 153600,
@@ -26,6 +26,20 @@
     "wd:map-app": 143360,
     "wd:hero": 61440,
     "wd:dashboard": 92160,
-    "wd:console": 92160
+    "wd:console": 92160,
+    "wd:validator": 102400
+  },
+  "phase3": {
+    "note": "WP6 Phase 3 on the integrated build (all six packages): real hero wired (HeroFrame + HeroStatic on /, HeroPlayer lazy as wd:hero). Lazy totals now include Turbopack loader-list siblings, which is why wd:map-app and wd:console read higher than under the entry-only walk (both carry the 87.3 kB zod chunk 2t_38bmbv53l6.js, as do the /create and /join shells).",
+    "/": 159334,
+    "/terms": 158720,
+    "/dev": 161485,
+    "/create": 262349,
+    "/join": 257331,
+    "wd:hero": 31539,
+    "wd:map-app": 182067,
+    "wd:dashboard": 23757,
+    "wd:console": 121958,
+    "wd:validator": 95232
   }
 }
