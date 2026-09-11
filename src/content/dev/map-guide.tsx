@@ -4,40 +4,34 @@ import { CodeBlock, DocTable } from "@/components/docs/CodeBlock";
 import { Stats } from "@/components/docs/Stats";
 import { Callout } from "@/components/ui/callout";
 import { MAP_LIST } from "@/config/maps";
-import { CONTROL_ZONE_LABEL, type ZoneAnchorId } from "@/lib/terrain/types";
+import { CONTROL_ZONE_IDS, CONTROL_ZONE_LABEL, type ZoneAnchorId } from "@/lib/terrain/types";
 import { CONTOUR_STEP } from "@/lib/terrain/contours";
+import { DEFAULT_RES } from "@/lib/terrain/generate";
+import { GRID_COLS, GRID_N, gridRef } from "@/lib/map/grid";
+import {
+  DEFAULT_DANGER_RADIUS,
+  DEFAULT_STROKE_WIDTH,
+  MAP_PX,
+  MAX_NODES,
+  MAX_NODES_PER_OP,
+  MAX_STATE_BYTES,
+  MAX_STROKE_POINTS,
+  MAX_TEXT_CHARS,
+} from "@/lib/map/types";
+import { EXPORT_LEGEND_HEIGHT } from "@/lib/map/export-png";
+import { MAP_CHUNK_BYTES, MAX_MAP_BYTES } from "@/lib/realtime/map-chunks";
 import { site } from "@/config/site";
 import type { Doc } from "./types";
 
-/* Map-space constants (§3.3 `src/lib/map/types.ts`). Quoted here because the docs describe them;
-   the reference table at the end is the single place they appear as numbers. */
-const MAP_PX = 2048;
-const DEFAULT_STROKE_WIDTH = 0.003;
-const DEFAULT_DANGER_RADIUS = 0.04;
-const MAX_NODES = 4000;
-const MAX_NODES_PER_OP = 200;
-const MAX_STATE_BYTES = 600_000;
-const MAX_STROKE_POINTS = 2000;
-const MAX_TEXT_CHARS = 80;
+/* Map-space constants come from the real modules (§3.3 / §3.4 / §5.7) so the guide cannot drift
+   from the code. The 8 MB upload cap is the §4.3.6 file-input limit (WP3's `UploadMap`); it has
+   no exported constant yet. */
 const UPLOAD_CAP_MB = 8;
-const SHARED_CAP_MB = 1.5;
-const TERRAIN_RES = 256;
+const SHARED_CAP_MB = MAX_MAP_BYTES / 1_048_576;
+const CHUNK_KB = MAP_CHUNK_BYTES / 1024;
+const TERRAIN_RES = DEFAULT_RES;
 
-const COLS = "ABCDEFGHIJ";
-const ZONE_IDS: ZoneAnchorId[] = ["default", "small-factory", "water-treatment", "houses"];
-
-/** Mirrors `gridRef` in `src/lib/map/grid.ts`: 10 × 10 cells A–J / 1–10, keypad sub-cells (7 8 9 top). */
-function gridRef(p: { x: number; y: number }, sub = true): string {
-  const cx = Math.min(9, Math.floor(p.x * 10));
-  const cy = Math.min(9, Math.floor(p.y * 10));
-  const cell = `${COLS[cx]}${cy + 1}`;
-  if (!sub) return cell;
-  const fx = p.x * 10 - cx;
-  const fy = p.y * 10 - cy;
-  const kx = Math.min(2, Math.floor(fx * 3));
-  const ky = Math.min(2, Math.floor(fy * 3));
-  return `${cell}-${(2 - ky) * 3 + kx + 1}`;
-}
+const ZONE_IDS = CONTROL_ZONE_IDS.filter((z): z is ZoneAnchorId => z !== "none");
 
 /** The keypad figure: one grid cell split into nine, numbered like a phone keypad turned for maps. */
 function KeypadFigure() {
@@ -117,7 +111,10 @@ export const mapGuide: Doc = {
                 value: `${MAP_LIST.length} (${MAP_LIST.map((m) => m.id).join(", ")})`,
               },
               { label: "Map space", value: `${MAP_PX} units` },
-              { label: "Grid", value: "10 × 10, A–J / 1–10" },
+              {
+                label: "Grid",
+                value: `${GRID_N} × ${GRID_N}, ${GRID_COLS[0]}–${GRID_COLS[GRID_N - 1]} / 1–${GRID_N}`,
+              },
               { label: "Custom upload cap", value: `${UPLOAD_CAP_MB} MB` },
             ]}
           />
@@ -216,10 +213,14 @@ export const mapGuide: Doc = {
       body: (
         <>
           <p>
-            The map is divided into a 10 × 10 grid. Columns run <strong>A–J</strong> left to right,
-            rows <strong>1–10</strong> top to bottom, so <code>A1</code> is the top-left cell and{" "}
-            <code>J10</code> the bottom-right. Each cell is a tenth of the map — on Zestafona about
-            240 m on a side — which is about the precision a voice call can carry.
+            The map is divided into a {GRID_N} × {GRID_N} grid. Columns run{" "}
+            <strong>
+              {GRID_COLS[0]}–{GRID_COLS[GRID_N - 1]}
+            </strong>{" "}
+            left to right, rows <strong>1–{GRID_N}</strong> top to bottom, so <code>A1</code> is the
+            top-left cell and <code>J10</code> the bottom-right. Each cell is a tenth of the map —
+            on Zestafona about 240 m on a side — which is about the precision a voice call can
+            carry.
           </p>
           <p>
             When a callout needs to be tighter, a cell splits into nine sub-cells with a keypad
@@ -269,7 +270,7 @@ export const mapGuide: Doc = {
                 </td>
                 {ZONE_IDS.map((z) => (
                   <td key={z}>
-                    <code>{gridRef(m.anchors[z])}</code>
+                    <code>{gridRef(m.anchors[z], true)}</code>
                     <span className="mt-0.5 block font-mono text-[12px] text-fg-faint">
                       {m.anchors[z].x.toFixed(2)}, {m.anchors[z].y.toFixed(2)}
                     </span>
@@ -315,9 +316,9 @@ export const mapGuide: Doc = {
             </li>
             <li>
               Both are kept in your browser (IndexedDB, keyed by the SHA-256 of the shared bytes)
-              and the room switches to the uploaded map. The shared copy is sent to the room in 48
-              kB chunks; receivers verify the hash before they show it, and a peer who joins later
-              asks the room for it.
+              and the room switches to the uploaded map. The shared copy is sent to the room in{" "}
+              {CHUNK_KB} kB chunks; receivers verify the hash before they show it, and a peer who
+              joins later asks the room for it.
             </li>
           </ol>
           <p>
@@ -342,9 +343,10 @@ export const mapGuide: Doc = {
           <h3 id="export">Taking a plan out of the room</h3>
           <p>
             Three exports, none of which need the map to be built-in. <strong>Export PNG</strong>{" "}
-            renders the terrain (or the uploaded image) with every visible layer on top, at the
-            current zoom, as a single image. <strong>Copy plan as text</strong> writes the markers
-            and requests as lines with grid references — the version you paste into a channel.{" "}
+            renders the terrain (or the uploaded image) with every visible layer on top as one{" "}
+            {MAP_PX} px square image with a {EXPORT_LEGEND_HEIGHT} px legend strip (room code, team,
+            map, zone, date) bottom-left. <strong>Copy plan as text</strong> writes the markers and
+            requests as lines with grid references — the version you paste into a channel.{" "}
             <strong>Save plan</strong> writes the room&apos;s nodes as JSON with their normalised
             points, so <strong>Load plan</strong> puts them back on any map at the same relative
             positions, replacing or merging with what is already drawn.
@@ -441,7 +443,9 @@ export const mapGuide: Doc = {
           <tr>
             <td>Grid</td>
             <td>
-              <code>10 × 10 · 9 sub-cells</code>
+              <code>
+                {GRID_N} × {GRID_N} · 9 sub-cells
+              </code>
             </td>
             <td>Columns A–J, rows 1–10, keypad digits 1–9 (7 8 9 on top).</td>
           </tr>
