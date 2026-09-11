@@ -49,6 +49,20 @@
   --req-claimed: #ffa028;
   --req-delivered: #7e8a6c;
 
+  /* text variants (small text on bg-1/bg-2 at >= 4.5:1; the base colours are fills / >= 14 px) */
+  --danger-text: #ff6b6b;
+  --req-delivered-text: #98a684;
+
+  /* type scale (§2.1) */
+  --t-display-1: clamp(2.75rem, 7vw, 6.5rem); /* hero H1; 44 px at 390 */
+  --t-display-2: clamp(2.25rem, 4.5vw, 3.75rem); /* page titles */
+  --t-display-3: 1.75rem; /* card titles */
+  --t-display-4: 1.25rem; /* panel headers in the app */
+  --t-lede: 1.125rem; /* 18px / 1.55 */
+  --t-body: 1rem; /* 16px / 1.6 */
+  --t-small: 0.875rem; /* 14px / 1.5 */
+  --t-mono-data: 0.75rem; /* 12px / 1, tabular-nums */
+
   /* shape */
   --radius: 4px;
   --radius-md: 6px;
@@ -101,6 +115,8 @@
   --color-req-open: var(--req-open);
   --color-req-claimed: var(--req-claimed);
   --color-req-delivered: var(--req-delivered);
+  --color-danger-text: var(--danger-text);
+  --color-req-delivered-text: var(--req-delivered-text);
 
   --font-display: var(--font-saira), Impact, "Arial Narrow", sans-serif;
   --font-sans: var(--font-barlow), system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -116,6 +132,7 @@
   --animate-pulse-slow: pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-blink: blink 1.6s steps(2, start) infinite;
   --animate-rise: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-shake: shake 0.24s cubic-bezier(0.2, 0.7, 0.2, 1) 2;
 }
 
 @keyframes blink {
@@ -133,6 +150,19 @@
     transform: translateY(0);
   }
 }
+/* 2 x 4 px shake for an invalid code (zeroed under prefers-reduced-motion below) */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
 
 @layer base {
   * {
@@ -147,6 +177,8 @@
     background: var(--bg-0);
     color: var(--text-0);
     font-family: var(--font-sans);
+    font-size: var(--t-body);
+    line-height: 1.6;
     font-feature-settings: "kern", "liga", "calt";
     text-rendering: optimizeLegibility;
   }
@@ -194,12 +226,104 @@
   text-transform: uppercase;
   color: var(--text-1);
 }
-/* Faint tactical grid used behind hero/section backgrounds */
+/* ---- type scale utilities (§2.1): use `display` + `display-N` together ---- */
+@utility display-1 {
+  font-size: var(--t-display-1);
+  line-height: 0.9;
+  letter-spacing: -0.01em;
+}
+@utility display-2 {
+  font-size: var(--t-display-2);
+  line-height: 0.92;
+  letter-spacing: -0.01em;
+}
+@utility display-3 {
+  font-size: var(--t-display-3);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+@utility display-4 {
+  font-size: var(--t-display-4);
+  line-height: 1;
+  letter-spacing: 0;
+}
+@utility lede {
+  font-size: var(--t-lede);
+  line-height: 1.55;
+  color: var(--text-1);
+}
+@utility mono-data {
+  font-family: var(--font-mono);
+  font-size: var(--t-mono-data);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- textures (§2.5): at most two per surface, never behind body text ---- */
+/* two-scale tactical grid (80 px major, 16 px minor) */
 @utility bg-grid {
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-  background-size: 80px 80px;
+    linear-gradient(to right, rgba(241, 235, 221, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(241, 235, 221, 0.045) 1px, transparent 1px),
+    linear-gradient(to right, rgba(241, 235, 221, 0.018) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(241, 235, 221, 0.018) 1px, transparent 1px);
+  background-size:
+    80px 80px,
+    80px 80px,
+    16px 16px,
+    16px 16px;
+}
+/* bg-grid that fades out from the top centre */
+@utility bg-grid-masked {
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 100%);
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 100%);
+}
+/* four 10 px L ticks, 1.5 px, accent at 60 %, drawn by one pseudo-element */
+@utility hud-corners {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    --tick: color-mix(in srgb, var(--accent) 60%, transparent);
+    background-image:
+      linear-gradient(var(--tick), var(--tick)), linear-gradient(var(--tick), var(--tick)),
+      linear-gradient(var(--tick), var(--tick)), linear-gradient(var(--tick), var(--tick)),
+      linear-gradient(var(--tick), var(--tick)), linear-gradient(var(--tick), var(--tick)),
+      linear-gradient(var(--tick), var(--tick)), linear-gradient(var(--tick), var(--tick));
+    background-size:
+      10px 1.5px,
+      1.5px 10px,
+      10px 1.5px,
+      1.5px 10px,
+      10px 1.5px,
+      1.5px 10px,
+      10px 1.5px,
+      1.5px 10px;
+    background-position:
+      top left,
+      top left,
+      top right,
+      top right,
+      bottom left,
+      bottom left,
+      bottom right,
+      bottom right;
+    background-repeat: no-repeat;
+  }
+}
+/* the (site) layout wrapper only; it has no other background image */
+@utility vignette {
+  background-image: radial-gradient(
+    120% 80% at 50% -10%,
+    rgba(255, 160, 40, 0.06),
+    transparent 60%
+  );
+}
+/* only inside the LIVE pill */
+@utility scanlines {
+  background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
 }
 @utility panel {
   background: var(--bg-1);
