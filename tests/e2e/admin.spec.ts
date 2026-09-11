@@ -36,7 +36,7 @@ test.describe("admin dashboard", () => {
     // The "What this sends" sheet opened automatically with the exact RCON call.
     const sheet = page.getByRole("region", { name: "What this sends" });
     await expect(sheet).toBeVisible();
-    await expect(sheet.getByText("POST")).toBeVisible();
+    await expect(sheet.getByText("POST", { exact: true })).toBeVisible();
     await expect(sheet.getByText(`/v1/players/${steamId}/kick`)).toBeVisible();
     await expect(sheet.getByTestId("sheet-snippet-curl")).toContainText("Authorization: Bearer");
     await sheet.getByRole("button", { name: "Close" }).click();
@@ -74,11 +74,15 @@ test.describe("admin dashboard", () => {
     await dialog.getByLabel(/Evidence URL/).fill("https://example.test/clip");
     await dialog.getByRole("button", { name: "Ban for 1h" }).click();
     await expect(page.locator(`tr[data-steamid="${steamId}"]`)).toHaveCount(0);
+    const sheet = page.getByRole("region", { name: "What this sends" });
+    await expect(sheet.getByText(`/v1/players/${steamId}/ban`)).toBeVisible();
 
+    // The sheet belongs to the Live tab: switching tabs must not leave it over the Bans table.
     await page
       .getByRole("navigation", { name: "Dashboard" })
       .getByRole("link", { name: "Bans" })
       .click();
+    await expect(sheet).toBeHidden();
     const banRow = page.locator(`[data-testid="bans-table"] tr[data-steamid="${steamId}"]`);
     await expect(banRow).toBeVisible();
     await expect(banRow.getByTestId("ban-countdown")).toHaveText(/59m|1h 00m/);

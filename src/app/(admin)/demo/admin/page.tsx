@@ -61,10 +61,8 @@ export default function AdminDemoPage() {
     <div className="mx-auto w-full max-w-[1280px] px-6 sm:px-10 lg:px-16">
       <section className="relative max-w-5xl pt-14 pb-10 sm:pt-20 lg:pt-24">
         <h1 className="display display-1 text-fg">
-          Run a Wardogs
-          <br />
-          server from
-          <br />
+          Run a Wardogs <br />
+          server from <br />
           one dashboard
         </h1>
         <p className="mt-5 display display-3 text-accent">

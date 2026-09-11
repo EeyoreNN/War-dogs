@@ -125,7 +125,7 @@ export interface SimContextValue {
   reset: () => void;
   storageOk: boolean;
   /** "What this sends" sheet. */
-  sheet: { open: boolean; entry: AuditEntry | null };
+  sheet: { open: boolean; entry: AuditEntry | null; path: string | null };
   openSheet: (entry: AuditEntry) => void;
   closeSheet: () => void;
   showRcon: boolean;
@@ -162,7 +162,11 @@ const getServerSnapshot = () => null;
 function SimRoot({ children, seed }: { children: React.ReactNode; seed: number }) {
   const [store] = React.useState(createSimStore);
   const snap = React.useSyncExternalStore(store.subscribe, store.getSnapshot, getServerSnapshot);
-  const [sheet, setSheet] = React.useState<SimContextValue["sheet"]>({ open: false, entry: null });
+  const [sheet, setSheet] = React.useState<SimContextValue["sheet"]>({
+    open: false,
+    entry: null,
+    path: null,
+  });
 
   const state = React.useMemo(
     () => (snap ? stateAt(seed, snap.now, snap.commands, snap.me) : null),
@@ -172,7 +176,17 @@ function SimRoot({ children, seed }: { children: React.ReactNode; seed: number }
   const reset = React.useCallback(() => {
     store.push({ t: "reset" });
   }, [store]);
-  const openSheet = React.useCallback((entry: AuditEntry) => setSheet({ open: true, entry }), []);
+  // The sheet belongs to the tab it opened on: moving to another tab must not leave it covering
+  // that tab's actions column (`RconSheet` compares `path` with the current pathname).
+  const openSheet = React.useCallback(
+    (entry: AuditEntry) =>
+      setSheet({
+        open: true,
+        entry,
+        path: typeof window === "undefined" ? null : window.location.pathname,
+      }),
+    [],
+  );
   const closeSheet = React.useCallback(() => setSheet((s) => ({ ...s, open: false })), []);
 
   const value = React.useMemo<SimContextValue>(
