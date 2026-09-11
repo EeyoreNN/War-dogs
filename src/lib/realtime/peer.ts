@@ -123,6 +123,8 @@ export function createPeerTransport(
           gotSnapshot = true;
           onSnapshot.emit(msg.snapshot);
         }
+        // Tell the newcomer we are here right away rather than at the next 10 s presence beat.
+        post({ k: "presence", room, members: selfPresence() });
         if (opts.getState()) scheduleReply();
         break;
       case "op":

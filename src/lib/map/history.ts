@@ -4,6 +4,8 @@ import type { Op, OpBody } from "./types";
 export interface HistoryEntry {
   op: Op;
   inverse: OpBody[];
+  /** Every op of a `dispatchMany` batch (the first is `op`); redo re-emits them all. */
+  batch?: Op[];
 }
 export interface History {
   undo: HistoryEntry[];
