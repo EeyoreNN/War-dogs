@@ -24,3 +24,7 @@ src/content/ServerSettings.ini
 
 # Verbatim relay tsconfig from the spec (§7.7).
 server/tsconfig.json
+
+# Playwright output
+test-results
+playwright-report
