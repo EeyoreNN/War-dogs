@@ -12,17 +12,8 @@ export function downloadBlob(filename: string, blob: Blob): void {
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
-/** Copy text to the clipboard; false when the API is missing or refuses (→ fallback dialog). */
-export async function copyText(text: string): Promise<boolean> {
-  const clipboard = typeof navigator === "undefined" ? undefined : navigator.clipboard;
-  if (!clipboard?.writeText) return false;
-  try {
-    await clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
-  }
-}
+// The clipboard guard is shared with `CopyButton` (§4.3.6): one implementation in `@/lib`.
+export { copyText } from "@/lib/clipboard";
 
 let audio: AudioContext | null = null;
 

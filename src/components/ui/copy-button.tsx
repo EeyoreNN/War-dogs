@@ -4,6 +4,7 @@ import * as React from "react";
 import { Check, Copy } from "lucide-react";
 import { Button } from "./button";
 import { announce } from "./live-region";
+import { copyText } from "@/lib/clipboard";
 import { cn } from "@/lib/utils";
 
 const COPIED_MS = 2000;
@@ -47,14 +48,7 @@ export function CopyButton({
   }, [fallback]);
 
   const copy = async () => {
-    const clipboard = typeof navigator === "undefined" ? undefined : navigator.clipboard;
-    if (!clipboard?.writeText) {
-      setFallback(true);
-      return;
-    }
-    try {
-      await clipboard.writeText(text);
-    } catch {
+    if (!(await copyText(text))) {
       setFallback(true);
       return;
     }
