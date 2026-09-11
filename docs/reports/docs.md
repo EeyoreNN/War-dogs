@@ -272,3 +272,31 @@ filename="ServerSettings.ini"`, same cache header. Exactly §3.14.
 - **WP3** (`UploadMap.tsx`, Phase 2): export the file-input cap (e.g. `MAX_UPLOAD_BYTES = 8 *
 1024 * 1024`) from a non-component module so the map guide can import it instead of quoting 8 MB.
 - **WP6**: none new.
+
+## Budgets
+
+Perf-budget pass (§7.3) against `scripts/check-bundle.mjs` on the merged build.
+
+| route                                              | before                   | after            | budget |
+| -------------------------------------------------- | ------------------------ | ---------------- | ------ |
+| `/dev`                                             | 248.1 kB gz (OVER)       | 157.1 kB gz (ok) | 190 kB |
+| `/discord-help` / `/map-guide` / `/rcon-reference` | 158.4 / 156.1 / 157.9 kB | unchanged        | 190 kB |
+
+- **Cause**: `ConfigValidator` is `"use client"` and statically imported `@/lib/config-ini/validate`,
+  which imports `zod`; the whole validator + zod graph (~91 kB gz) rode the `/dev` first load.
+  `IniViewer` also reads `validate.ts` but is a server component, so it costs nothing client-side.
+- **Fix**: `src/components/docs/ConfigValidatorLoader.tsx` (`"use client"`) owns
+  `dynamic(() => import("./ConfigValidator"), { ssr: false })` and renders a
+  `ConfigValidatorSkeleton` until the chunk lands; `/dev/page.tsx` imports only the loader. The
+  page shell (cards, section copy, the annotated template) is still server-rendered HTML. The
+  island's root carries `data-bundle="wd:validator"`.
+- **Lazy bundle**: not measured by the committed script because `LAZY_BUDGETS` (in `scripts/`,
+  not a WP5 path) has no `wd:validator` entry. Measured by hand from `.next/static/chunks`: the
+  marked entry chunk is 5.7 kB gz and the sibling chunk that holds `zod` + `validate.ts` is
+  86.4 kB gz — ≈ 92 kB gz in total, none of it referenced by the prerendered `/dev` HTML. Note
+  for WP6: Turbopack loads that sibling through its runtime chunk list, not a textual `import()`,
+  so the script's graph walk reports the entry alone (5.7 kB, 1 chunk); a `wd:validator` budget
+  of 100 kB matches the real graph.
+- Gates: prettier · lint · typecheck · `npm run test` (325) · `next build` · check-bundle (`/dev`
+  ok; the only OVER rows left are the `/demo/admin/*` routes, WP4/WP6) · `docs.spec.ts` 12/12
+  against the build on port 3105.

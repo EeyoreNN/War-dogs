@@ -41,7 +41,7 @@ export function ConfigValidator({ template }: { template: string }) {
   const warnings = result?.issues.filter((i) => i.level === "warning") ?? [];
 
   return (
-    <div className="not-prose flex flex-col gap-5">
+    <div data-bundle="wd:validator" className="not-prose flex flex-col gap-5">
       <Field
         label="Paste your ServerSettings.ini"
         htmlFor={`${id}-ini`}
