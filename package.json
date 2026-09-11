@@ -11,7 +11,7 @@
     "build:relay": "tsc -p server/tsconfig.json",
     "start:relay": "node server/dist/server/relay.js",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
