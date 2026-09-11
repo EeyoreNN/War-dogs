@@ -18,6 +18,7 @@ export function MapPreview({
   className,
   title,
   fit = "contain",
+  shift = 0,
 }: {
   state: RoomState;
   size?: number;
@@ -27,6 +28,8 @@ export function MapPreview({
   title?: string;
   /** `cover` crops the square map to the box (the 16:10 hero frame). */
   fit?: "contain" | "cover";
+  /** With `cover`: move the crop up by this fraction of the box height (the hero's framing). */
+  shift?: number;
 }) {
   const viewport = fitToBox({ w: size, h: size });
   const { map, controlZone } = state.settings;
@@ -43,38 +46,47 @@ export function MapPreview({
         className,
       )}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- the terrain is an SVG route, not an optimisable raster */}
-      <img
-        src={terrainUrl(map, { zone: controlZone, size: 1024, labels: true })}
-        alt=""
-        width={1024}
-        height={1024}
-        decoding="async"
-        fetchPriority={priority ? "high" : undefined}
-        loading={priority ? "eager" : "lazy"}
-        draggable={false}
-        className={cn(
-          "absolute inset-0 h-full w-full select-none",
-          fit === "cover" ? "object-cover" : "object-contain",
-        )}
-      />
-      <svg
-        viewBox={`0 0 ${size} ${size}`}
-        preserveAspectRatio={fit === "cover" ? "xMidYMid slice" : "xMidYMid meet"}
-        role="img"
-        aria-label={title ?? `The plan on ${mapName}`}
-        className="absolute inset-0 h-full w-full"
-        style={style}
+      <div
+        className="absolute inset-x-0"
+        style={
+          fit === "cover" && shift
+            ? { top: `${-shift * 200}%`, height: `${100 + shift * 200}%` }
+            : { top: 0, height: "100%" }
+        }
       >
-        <Scene
-          state={state}
-          nodes={nodes}
-          viewport={viewport}
-          zone={zone}
-          widthMetres={widthMetresFor(state.settings)}
-          showGrid={showGrid}
+        {/* eslint-disable-next-line @next/next/no-img-element -- the terrain is an SVG route, not an optimisable raster */}
+        <img
+          src={terrainUrl(map, { zone: controlZone, size: 1024, labels: true })}
+          alt=""
+          width={1024}
+          height={1024}
+          decoding="async"
+          fetchPriority={priority ? "high" : undefined}
+          loading={priority ? "eager" : "lazy"}
+          draggable={false}
+          className={cn(
+            "absolute inset-0 h-full w-full select-none",
+            fit === "cover" ? "object-cover" : "object-contain",
+          )}
         />
-      </svg>
+        <svg
+          viewBox={`0 0 ${size} ${size}`}
+          preserveAspectRatio={fit === "cover" ? "xMidYMid slice" : "xMidYMid meet"}
+          role="img"
+          aria-label={title ?? `The plan on ${mapName}`}
+          className="absolute inset-0 h-full w-full"
+          style={style}
+        >
+          <Scene
+            state={state}
+            nodes={nodes}
+            viewport={viewport}
+            zone={zone}
+            widthMetres={widthMetresFor(state.settings)}
+            showGrid={showGrid}
+          />
+        </svg>
+      </div>
     </div>
   );
 }

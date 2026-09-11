@@ -47,11 +47,14 @@ export function centreOn(v: Viewport, p: Point, box: { w: number; h: number }): 
   return { scale: v.scale, tx: box.w / 2 - p.x * k, ty: box.h / 2 - p.y * k };
 }
 
-/** Scale so the map covers the whole box (crop), centred — the hero frame. */
-export function coverBox(box: { w: number; h: number }): Viewport {
+/** The hero crop sits this fraction of the box height above centre so the seed plan is framed. */
+export const HERO_SHIFT = 0.03;
+
+/** Scale so the map covers the whole box (crop), centred, optionally shifted up by `shift` × h. */
+export function coverBox(box: { w: number; h: number }, shift = 0): Viewport {
   const scale = Math.max(box.w, box.h) / MAP_PX;
   const size = MAP_PX * scale;
-  return { scale, tx: (box.w - size) / 2, ty: (box.h - size) / 2 };
+  return { scale, tx: (box.w - size) / 2, ty: (box.h - size) / 2 - shift * box.h };
 }
 
 /** Is a map point inside the visible box (with a margin in screen px)? */

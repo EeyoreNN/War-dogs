@@ -162,6 +162,15 @@ export default function MapApp(props: MapAppProps) {
     });
   }, []);
 
+  // Brief mode removes the rail and panels: refit the map to the new box.
+  const briefRef = React.useRef(brief);
+  React.useEffect(() => {
+    if (briefRef.current === brief) return;
+    briefRef.current = brief;
+    const id = requestAnimationFrame(() => useUiStore.getState().viewportApi?.fit());
+    return () => cancelAnimationFrame(id);
+  }, [brief]);
+
   // Fullscreen state.
   React.useEffect(() => {
     const onChange = () => uiSet({ fullscreen: !!document.fullscreenElement });
@@ -236,10 +245,17 @@ export default function MapApp(props: MapAppProps) {
                 <MapSurface />
                 {!isMobile ? (
                   <>
-                    <div className="pointer-events-none absolute right-2 bottom-12 flex flex-col items-end gap-2">
-                      {mode === "demo" ? <DemoBar /> : null}
+                    <div
+                      className={`pointer-events-none absolute right-2 flex flex-col items-end gap-2 ${brief ? "bottom-36" : "bottom-12"}`}
+                    >
+                      {mode === "demo" && !landscapePhone ? <DemoBar /> : null}
                       {!brief ? <ZoomStack className="pointer-events-auto" /> : null}
                     </div>
+                    {mode === "demo" && landscapePhone ? (
+                      <div className="pointer-events-none absolute top-2 right-2">
+                        <DemoBar />
+                      </div>
+                    ) : null}
                     {!brief ? <BottomChrome /> : null}
                     {mode === "demo" && brief ? <SchematicNote /> : null}
                     {!panelsOpen && !brief ? (

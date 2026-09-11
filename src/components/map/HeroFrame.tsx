@@ -51,7 +51,7 @@ export function HeroFrame({
     <div
       ref={ref}
       tabIndex={0}
-      role="link"
+      role="group"
       aria-label="Live preview of the shared map; press Enter to open the demo"
       onKeyDown={(e) => {
         if (e.key === "Enter" && e.target === e.currentTarget) router.push("/demo");

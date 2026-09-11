@@ -3,6 +3,7 @@
 import { heroFinalState } from "@/lib/map/scenario";
 import { cn } from "@/lib/utils";
 import { HeroChrome } from "./HeroChrome";
+import { HERO_SHIFT } from "./lib/screen";
 import { MapPreview } from "./MapPreview";
 
 export function HeroStatic({ className }: { className?: string }) {
@@ -14,6 +15,7 @@ export function HeroStatic({ className }: { className?: string }) {
           state={heroFinalState()}
           priority
           fit="cover"
+          shift={HERO_SHIFT}
           title="The shared map replaying a demo plan on Zestafona"
         />
       </div>

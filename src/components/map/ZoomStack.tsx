@@ -162,7 +162,7 @@ export function BottomChrome() {
   const { openExternal, mode } = useMapApp();
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-2">
-      <div className="pointer-events-auto flex items-center gap-2 rounded-md bg-bg-0/70 px-2 py-1 font-mono text-[10px] tracking-[0.12em] text-fg-muted uppercase backdrop-blur">
+      <div className="pointer-events-auto flex items-center gap-2 rounded-md bg-bg-0/70 px-2 py-1 font-mono text-[10px] tracking-[0.12em] whitespace-nowrap text-fg-muted uppercase backdrop-blur">
         <span>v{site.version}</span>
         <span aria-hidden="true">·</span>
         {mode === "demo" ? (

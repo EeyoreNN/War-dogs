@@ -11,7 +11,13 @@ import { terrainBitmap } from "@/lib/terrain/draw-canvas";
 import type { Ping, RoomState } from "@/lib/map/types";
 import { cn } from "@/lib/utils";
 import { HeroChrome } from "./HeroChrome";
-import { inverseScale, coverBox, terrainBucket, terrainCanvasTransform } from "./lib/screen";
+import {
+  coverBox,
+  HERO_SHIFT,
+  inverseScale,
+  terrainBucket,
+  terrainCanvasTransform,
+} from "./lib/screen";
 import { widthMetresFor, zoneFor } from "./lib/zone";
 import { partitionNodes, Scene } from "./Scene";
 
@@ -45,7 +51,10 @@ export default function HeroPlayer({
     return () => ro.disconnect();
   }, []);
 
-  const viewport = React.useMemo(() => coverBox(box.w && box.h ? box : { w: 1024, h: 640 }), [box]);
+  const viewport = React.useMemo(
+    () => coverBox(box.w && box.h ? box : { w: 1024, h: 640 }, HERO_SHIFT),
+    [box],
+  );
   const bucket = terrainBucket(
     viewport.scale,
     typeof window === "undefined" ? 1 : window.devicePixelRatio,

@@ -52,71 +52,76 @@ export function JoinDialog({
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={() => undefined}
-      title={`Join war room ${code}`}
-      description={activityCopy ? "Sign-in needs a server; use a callsign for now." : undefined}
-      size="sm"
-      initialFocusRef={inputRef}
-      footer={
-        <Button onClick={submit} className="w-full sm:w-auto">
-          Join
-        </Button>
-      }
-    >
-      <div
-        className="flex flex-col gap-4"
-        onKeyDown={(e) => e.key === "Enter" && !(e.target instanceof HTMLButtonElement) && submit()}
+    // The join dialog cannot be dismissed (§4.3.1): the primitive's Close button is hidden here.
+    <div className="contents [&_dialog_[aria-label=Close]]:hidden">
+      <Dialog
+        open={open}
+        onClose={() => undefined}
+        title={`Join war room ${code}`}
+        description={activityCopy ? "Sign-in needs a server; use a callsign for now." : undefined}
+        size="sm"
+        initialFocusRef={inputRef}
+        footer={
+          <Button onClick={submit} className="w-full sm:w-auto">
+            Join
+          </Button>
+        }
       >
-        <Field
-          label="Your callsign"
-          htmlFor="join-callsign"
-          error={error}
-          trailing={
-            <Button
-              variant="chip"
-              onClick={() => setCallsign(generateCallsign())}
-              aria-label="Generate a callsign"
-              className="gap-1"
-            >
-              <Dices size={13} aria-hidden="true" /> Dice
-            </Button>
+        <div
+          className="flex flex-col gap-4"
+          onKeyDown={(e) =>
+            e.key === "Enter" && !(e.target instanceof HTMLButtonElement) && submit()
           }
         >
-          <Input
-            ref={inputRef}
-            value={callsign}
-            placeholder={placeholder}
-            maxLength={24}
-            autoComplete="off"
-            onChange={(e) => setCallsign(e.target.value)}
-          />
-        </Field>
-        <div>
-          <p className="mb-2 label-mono">
-            Your focus <span className="text-fg-faint">optional</span>
-          </p>
-          <FocusGrid value={focus} onChange={setFocus} compact />
-        </div>
-        {squads && squads.length ? (
-          <Field label="Your squad" htmlFor="join-squad">
-            <select
-              id="join-squad"
-              value={squad ?? ""}
-              onChange={(e) => setSquad(e.target.value || null)}
-              className="h-12 w-full rounded-md border border-line-strong bg-bg-1 px-3 text-[15px] text-fg"
-            >
-              {squads.map((q) => (
-                <option key={q} value={q}>
-                  {q}
-                </option>
-              ))}
-            </select>
+          <Field
+            label="Your callsign"
+            htmlFor="join-callsign"
+            error={error}
+            trailing={
+              <Button
+                variant="chip"
+                onClick={() => setCallsign(generateCallsign())}
+                aria-label="Generate a callsign"
+                className="gap-1"
+              >
+                <Dices size={13} aria-hidden="true" /> Dice
+              </Button>
+            }
+          >
+            <Input
+              ref={inputRef}
+              value={callsign}
+              placeholder={placeholder}
+              maxLength={24}
+              autoComplete="off"
+              onChange={(e) => setCallsign(e.target.value)}
+            />
           </Field>
-        ) : null}
-      </div>
-    </Dialog>
+          <div>
+            <p className="mb-2 label-mono">
+              Your focus <span className="text-fg-faint">optional</span>
+            </p>
+            <FocusGrid value={focus} onChange={setFocus} compact />
+          </div>
+          {squads && squads.length ? (
+            <Field label="Your squad" htmlFor="join-squad">
+              <select
+                id="join-squad"
+                value={squad ?? ""}
+                onChange={(e) => setSquad(e.target.value || null)}
+                className="h-12 w-full rounded-md border border-line-strong bg-bg-1 px-3 text-[15px] text-fg"
+              >
+                {squads.map((q) => (
+                  <option key={q} value={q}>
+                    {q}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          ) : null}
+        </div>
+      </Dialog>
+    </div>
   );
 }
 
