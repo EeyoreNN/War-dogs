@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ArrowDownToLine } from "lucide-react";
 import { DocSection, DocsShell } from "@/components/docs/DocsShell";
-import { ConfigValidator } from "@/components/docs/ConfigValidator";
+import { ConfigValidatorLoader } from "@/components/docs/ConfigValidatorLoader";
 import { IniViewer } from "@/components/docs/IniViewer";
 import { Callout } from "@/components/ui/callout";
 import { CardBody, CardEyebrow, CardTitle, cardClasses, LinkCard } from "@/components/ui/card";
@@ -78,7 +78,7 @@ export default async function DevHubPage() {
             validate endpoint would give: keys it does not read are stripped, values out of range
             are errors, and a listener that cannot start says so before you restart anything.
           </p>
-          <ConfigValidator template={template} />
+          <ConfigValidatorLoader template={template} />
         </DocSection>
 
         <DocSection id="template" title="The annotated template">
