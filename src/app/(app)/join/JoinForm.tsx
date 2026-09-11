@@ -7,11 +7,11 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CodeInput, isSubmittableCode } from "@/components/ui/code-input";
 import { Label } from "@/components/ui/input";
-import { CallsignSchema } from "@/lib/map/schema";
 import type { Focus } from "@/lib/map/types";
 import { isReservedCode, isRoomCode, normalizeCode } from "@/lib/room/code";
 import { generateCallsign, loadIdentity, saveIdentity } from "@/lib/storage/identity";
 import { CallsignField } from "@/components/map/forms/CallsignField";
+import { parseCallsign } from "@/components/map/forms/callsign";
 import { DiscordButton } from "@/components/map/forms/DiscordButton";
 import { FocusGrid } from "@/components/map/forms/FocusPicker";
 import { FormShell, GroupLabel, OrDivider } from "@/components/map/forms/FormShell";
@@ -55,14 +55,14 @@ export function JoinForm() {
       return;
     }
     setCodeError(undefined);
-    const parsed = CallsignSchema.safeParse(callsign || placeholder);
-    if (!parsed.success) {
+    const parsedCallsign = parseCallsign(callsign || placeholder);
+    if (parsedCallsign === null) {
       setCallsignError("2 to 24 characters.");
       return;
     }
     setCallsignError(undefined);
     setBusy(true);
-    saveIdentity({ ...loadIdentity(), callsign: parsed.data, focus });
+    saveIdentity({ ...loadIdentity(), callsign: parsedCallsign, focus });
     router.push(`/room/${clean}`);
   };
 

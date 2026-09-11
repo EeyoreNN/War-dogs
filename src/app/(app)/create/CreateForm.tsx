@@ -12,11 +12,9 @@ import { RadioCards } from "@/components/ui/radio-cards";
 import { MAP_LIST, mapById } from "@/config/maps";
 import { site, type Team } from "@/config/site";
 import { createRoomState } from "@/lib/map/reduce";
-import { CallsignSchema } from "@/lib/map/schema";
 import { DEFAULT_SQUADS, type RoomSettings, type RosterMember } from "@/lib/map/types";
 import { newRoomCode } from "@/lib/room/code";
 import { loadIdentity, saveIdentity } from "@/lib/storage/identity";
-import { loadRoom, saveRoom } from "@/lib/storage/room";
 import { listRecentRooms, touchRecentRoom } from "@/lib/storage/rooms";
 import {
   CONTROL_ZONE_IDS,
@@ -28,6 +26,7 @@ import {
 import { terrainUrl } from "@/lib/terrain/url";
 import { cn } from "@/lib/utils";
 import { CallsignField } from "@/components/map/forms/CallsignField";
+import { parseCallsign } from "@/components/map/forms/callsign";
 import { DiscordButton } from "@/components/map/forms/DiscordButton";
 import { FocusHelpDialog } from "@/components/map/forms/FocusHelp";
 import { FormShell, GroupLabel, OrDivider } from "@/components/map/forms/FormShell";
@@ -89,16 +88,19 @@ export function CreateForm() {
 
   const recentForMap = recent.filter((r) => r.map === map);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = CallsignSchema.safeParse(callsign);
-    if (!parsed.success) {
+    const parsedCallsign = parseCallsign(callsign);
+    if (parsedCallsign === null) {
       setError("2 to 24 characters.");
       return;
     }
     setError(undefined);
     setBusy(true);
-    const identity = { ...loadIdentity(), callsign: parsed.data };
+    // The room storage module validates snapshots with zod; load it on submit only so the form's
+    // first load stays under the app budget (§7.3).
+    const { loadRoom, saveRoom } = await import("@/lib/storage/room");
+    const identity = { ...loadIdentity(), callsign: parsedCallsign };
     saveIdentity(identity);
     const code = newRoomCode();
     const now = clockNow();
@@ -161,7 +163,7 @@ export function CreateForm() {
       style={{ "--team": teamVar } as React.CSSProperties}
     >
       <form
-        onSubmit={submit}
+        onSubmit={(e) => void submit(e)}
         noValidate
         className="flex flex-col gap-7"
         style={{ borderTop: "2px solid var(--team)", marginTop: -20, paddingTop: 20 }}
