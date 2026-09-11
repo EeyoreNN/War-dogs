@@ -493,12 +493,15 @@ const isMain =
   typeof require !== "undefined" && typeof module !== "undefined" && require.main === module;
 if (isMain) {
   const port = Number(process.env.RELAY_PORT ?? process.env.PORT ?? 8787);
+  // Behind a reverse proxy or tunnel, bind to loopback so the relay is not reachable on the LAN:
+  // the Origin allow-list is a browser guarantee and any other client can forge that header.
+  const host = process.env.RELAY_HOST ?? "0.0.0.0";
   const relay = createRelay();
   relay
-    .listen(port)
+    .listen(port, host)
     .then((p) =>
       console.log(
-        `[relay] listening on :${p} (origins: ${parseOrigins(process.env.RELAY_ALLOWED_ORIGINS).join(", ") || "none"})`,
+        `[relay] listening on ${host}:${p} (origins: ${parseOrigins(process.env.RELAY_ALLOWED_ORIGINS).join(", ") || "none"})`,
       ),
     )
     .catch((e) => {
