@@ -41,6 +41,24 @@ test.describe("docs", () => {
     await page.goto("/rcon-reference");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/wardogs server reference/i);
     await expect(page.getByText(/Updated 2026-09-10 · v0\.27/)).toBeVisible();
+    if (testInfo.project.name === "desktop") {
+      const toc = page.getByRole("navigation", { name: "Contents", exact: true });
+      await expect(toc.getByRole("link", { name: /Overview/ })).toHaveAttribute(
+        "aria-current",
+        "true",
+      );
+      await page.locator("section[id='08']").scrollIntoViewIfNeeded();
+      await expect(toc.getByRole("link", { name: /ServerSettings\.ini/ })).toHaveAttribute(
+        "aria-current",
+        "true",
+      );
+      await expect(toc.getByRole("link", { name: /Overview/ })).not.toHaveAttribute(
+        "aria-current",
+        "true",
+      );
+    }
+    await page.evaluate(() => window.scrollTo(0, 0));
+
     await expect(page.getByText(/35 of 35 endpoints/)).toBeVisible();
     const rows = page.getByRole("table", { name: /every endpoint/i }).locator("tbody tr");
     await expect(rows).toHaveCount(35);
@@ -51,28 +69,7 @@ test.describe("docs", () => {
     await expect(page.getByText(/^2 of 35 endpoints/)).toBeVisible();
 
     await expect(page.getByRole("button", { name: "Copy for Claude / ChatGPT" })).toBeVisible();
-    await expect(page.getByRole("link", { name: /ServerSettings\.ini/ }).first()).toHaveAttribute(
-      "href",
-      "/ServerSettings.ini",
-    );
-
-    if (testInfo.project.name === "desktop") {
-      const toc = page.getByRole("navigation", { name: "Contents" });
-      await expect(toc.getByRole("link", { name: /Overview/ })).toHaveAttribute(
-        "aria-current",
-        "true",
-      );
-      await page.locator("section[id='08']").scrollIntoViewIfNeeded();
-      await page.mouse.wheel(0, 40);
-      await expect(toc.getByRole("link", { name: /ServerSettings\.ini/ })).toHaveAttribute(
-        "aria-current",
-        "true",
-      );
-      await expect(toc.getByRole("link", { name: /Overview/ })).not.toHaveAttribute(
-        "aria-current",
-        "true",
-      );
-    }
+    await expect(page.locator('a[download][href="/ServerSettings.ini"]')).toHaveCount(1);
   });
 
   test("/discord-help: the stepper reaches outcome D and survives a reload", async ({ page }) => {
