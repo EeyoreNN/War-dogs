@@ -2,7 +2,13 @@ import { site } from "@/config/site";
 import { CONTROL_ZONE_IDS, MAP_IDS, type ControlZoneId, type MapId } from "@/lib/terrain/types";
 import { hashString } from "./rng";
 import { EXPERIENCE, SCORE_TICK_RANGE, SIM_MAPS, mapName } from "./engine";
-import { LIGHTINGS, type AdminCommand, type Lighting, type SimState } from "./types";
+import {
+  LIGHTINGS,
+  type AdminCommand,
+  type Lighting,
+  type SimPlayer,
+  type SimState,
+} from "./types";
 
 /**
  * The in-browser RCON listener the API console targets. Every one of the 35 operations in
@@ -83,11 +89,14 @@ function json(
   }
 }
 
-function playerOr404(ctx: SimContext, steamId: string) {
+function playerOr404(
+  ctx: SimContext,
+  steamId: string,
+): { ok: true; player: SimPlayer } | { ok: false; error: ReturnType<typeof err> } {
   const p = ctx.state.players.find((x) => x.steamId === steamId);
   return p
-    ? { player: p }
-    : { error: err(404, "not_found", `No connected player with steamId ${steamId}.`) };
+    ? { ok: true, player: p }
+    : { ok: false, error: err(404, "not_found", `No connected player with steamId ${steamId}.`) };
 }
 
 export function configRevision(text: string): string {
@@ -267,7 +276,7 @@ route("DELETE", "/v1/reserved-slots/{steamId}", (ctx, p) => {
 
 route("POST", "/v1/players/{steamId}/kick", (ctx, p, req) => {
   const found = playerOr404(ctx, p.steamId);
-  if ("error" in found) return found.error;
+  if (!found.ok) return found.error;
   const b = json(req);
   if ("error" in b) return b.error;
   ctx.push({
@@ -280,7 +289,7 @@ route("POST", "/v1/players/{steamId}/kick", (ctx, p, req) => {
 
 route("POST", "/v1/players/{steamId}/kill", (ctx, p) => {
   const found = playerOr404(ctx, p.steamId);
-  if ("error" in found) return found.error;
+  if (!found.ok) return found.error;
   ctx.push({ t: "kill", steamId: p.steamId });
   return ok(`${found.player.name} killed.`);
 });
@@ -289,7 +298,7 @@ route("POST", "/v1/players/{steamId}/kill", (ctx, p) => {
 
 route("POST", "/v1/players/{steamId}/message", (ctx, p, req) => {
   const found = playerOr404(ctx, p.steamId);
-  if ("error" in found) return found.error;
+  if (!found.ok) return found.error;
   const b = json(req);
   if ("error" in b) return b.error;
   if (typeof b.value.message !== "string" || !b.value.message.trim())
@@ -300,7 +309,7 @@ route("POST", "/v1/players/{steamId}/message", (ctx, p, req) => {
 
 route("PATCH", "/v1/players/{steamId}", (ctx, p, req) => {
   const found = playerOr404(ctx, p.steamId);
-  if ("error" in found) return found.error;
+  if (!found.ok) return found.error;
   const b = json(req);
   if ("error" in b) return b.error;
   const faction = typeof b.value.faction === "string" ? b.value.faction : "";
