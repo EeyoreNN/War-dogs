@@ -195,5 +195,8 @@ relay with `localStorage.setItem("wardogs:relay", "ws://host:8787")` (`"off"` fo
 
 ## Not done
 
-- `npm run e2e` (sync.spec) — runs against the integrated build in Phase 2; the spec is written.
+- `npm run e2e` (sync.spec) — run in Phase 2 integration: both halves pass on a build with
+  `NEXT_PUBLIC_RELAY_URL=ws://127.0.0.1:8787` (the CSP admits only that origin, §7.6); the
+  store gained `sendCursor(at)` / `ingestPing(ping)` (WP3 request) and the broadcast transport
+  throttles cursor frames like ws. See `docs/reports/map-ui.md` → Integration.
 - Screenshots — no UI in this package.

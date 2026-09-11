@@ -17,15 +17,52 @@ Screenshots (1440×900 and 390×844, plus 844×390) under
 `room-mobile-empty`, `room-mobile-sheet`, `room-mobile-ping`, `export.png` (the 2048 px PNG the
 Plan tab downloads), `hero-check` / `hero-check-late` (the §3.13 hero exports in a 16:10 frame).
 
+## Integration (Phase 2, on `claude/wardogs-clone-improvement-agc9oe`)
+
+Gates on the integrated build: lint ✓ · typecheck ✓ · `npm run test` ✓ (68 files, 388 tests) ·
+`npm run build` ✓ · `check-bundle` ✓ (all within budget) · e2e `room` `demo` `mobile` `keyboard`
+`sync`: desktop 6 passed / 2 skipped (mobile-only), mobile 3 passed / 5 skipped (desktop-only).
+
+- **h1 on the app routes**: `MapAppLoader` renders one visually hidden, server-rendered h1
+  (`Live demo · war room DEMO`, `War room ABC234`, `Discord activity · war room ABC234`); the
+  static shell is aria-hidden and MapApp mounts late, so neither could own it. `ActivityShell`
+  carries `Discord activity · war room` before the room is known. `/create` and `/join` already
+  had the FormShell h1.
+- **demo.spec marker count (9 vs 15)**: the six extras were the server shell's copy of the seed
+  plan — it stays in the DOM with `hidden` by contract (§3.13), and the spec's page-wide locator
+  counted it too (7 hidden + 7 live + ours = 15). The locators are now scoped to the live
+  `role="application"` map, and the first assertion is `seed + 1` (the bot's troops marker
+  arrives at 14 s, after that check). Spec fix; no rendering bug.
+- **sync.spec (a) hang**: the New request kind picker is a `radiogroup` ("Fuel , key 1"), so
+  `getByRole("button", { name: /^fuel$/ })` never resolved and the click waited out the test.
+  Fixed the locator; Delivered is asserted on the DONE tab (ALL keeps a just-delivered card for
+  8 s). **(b) RELAY** had two blockers: the production CSP only allows the relay origin baked in
+  by `NEXT_PUBLIC_RELAY_URL` (§7.6, by design), so the `wardogs:relay` override to
+  `ws://127.0.0.1:8787` was refused by `connect-src` on the config's build (see the request
+  below); and the opted-out third browser has no plan, so the top bar (and pill) never rendered —
+  the no-plan bar now carries the `SyncPill`, which honestly reads `LOCAL · this browser` next to
+  the "Nothing here yet" dialog. Both halves pass on a build with
+  `NEXT_PUBLIC_RELAY_URL=ws://127.0.0.1:8787`.
+- **Store actions** `sendCursor(at)` and `ingestPing(ping)` are in; `MapSurface` sends the cursor
+  on pointer move (null on leave), the broadcast transport trailing-throttles cursor frames at
+  50 ms like the ws transport, and the demo director feeds bot pings through `ingestPing` —
+  `useUiStore.demoPings` is gone.
+- **Budget**: `/create` 252 → 167 kB and `/join` 247 → 162 kB gz. The leak was zod itself
+  (94 kB gz, one chunk) reached through `CallsignSchema` from `@/lib/map/schema`; the forms use
+  the zod-free `parseCallsign` (`src/components/map/forms/callsign.ts`, unit-tested against the
+  schema), and `CreateForm` loads `@/lib/storage/room` (parseSnapshot) on submit only.
+- `room`, `demo`, `mobile` and `keyboard` prime `wardogs:relay = "off"` so they stay LOCAL
+  whatever relay the build was configured with.
+
 ## What shipped
 
 ### Routes and layout (`src/app/(app)/**`)
 
 - `layout.tsx` — chromeless `(app)` shell: the one `Skip to map` link → `#map`, `<main id="main"
-  class="flex min-h-dvh flex-col">` with no fixed height / overflow, `viewport.interactiveWidget:
-  "resizes-content"`.
+class="flex min-h-dvh flex-col">` with no fixed height / overflow, `viewport.interactiveWidget:
+"resizes-content"`.
 - `demo/page.tsx` — static shell (`AppShellStatic` + `<MapPreview state={demoSeedState(0)} priority/>`
-  + `<noscript>`) as the child of `<MapAppLoader mode="demo" code="DEMO">`; `demo/opengraph-image.tsx`.
+  - `<noscript>`) as the child of `<MapAppLoader mode="demo" code="DEMO">`; `demo/opengraph-image.tsx`.
 - `room/[code]/page.tsx` — `await params`, `AnyRoomCodeSchema`, `DEMO` → `redirect("/demo")`,
   invalid → `notFound()`, Skeleton map area; `room/[code]/opengraph-image.tsx` (generic room preset).
 - `create/page.tsx` + `CreateForm.tsx` — §4.4 in order (team radiogroup with team rule and
@@ -109,9 +146,9 @@ Plan tab downloads), `hero-check` / `hero-check-late` (the §3.13 hero exports i
   `role="listbox"`, collapsed disclosure that opens on keyboard focus, options read as
   `Enemy FOB · Valkyra "AUSTIN" at F3, placed by Rook`, arrows / Shift-nudge / Delete / Enter),
   `AppDialogs` (the undismissable Join dialog with dice and the focus grid, squad pick, `Nothing
-  here yet` with Wait / Start fresh, `You were removed from this room`, `This room is full (64)`,
+here yet` with Wait / Start fresh, `You were removed from this room`, `This room is full (64)`,
   `You are now commander` OK / Decline, the clipboard fallback dialog, `Downloads are blocked
-  inside Discord`).
+inside Discord`).
 - **Mobile** (`mobile/*`): the 56 px `role="toolbar"` bottom bar (Select · Pen · Arrow · Marker ·
   More, 44 px targets), `Ping` / `Request` FABs that rise with the sheet, the panels bottom
   `Sheet` with Requests / Roster tabs and the peek handle badge (positioned above the bar through
@@ -182,7 +219,14 @@ Plan tab downloads), `hero-check` / `hero-check-late` (the §3.13 hero exports i
 
 ## Requests to other packages
 
-**WP1 — `src/store/room.ts`** (two additive actions; the UI is already wired for both):
+**Integration — `playwright.config.ts` / `.github/workflows/ci.yml` (WP6)**: `sync.spec` (b) needs
+the e2e build to bake in the relay origin, exactly as production does (§7.6: the CSP allows only
+`NEXT_PUBLIC_RELAY_URL`; a `wardogs:relay` override elsewhere is blocked by design). Add
+`NEXT_PUBLIC_RELAY_URL: process.env.NEXT_PUBLIC_RELAY_URL ?? "ws://127.0.0.1:8787"` to the Next
+`webServer` `env` (and `NEXT_PUBLIC_RELAY_URL: "ws://127.0.0.1:8787"` to the CI `env`). The
+LOCAL journeys already opt out with `wardogs:relay = "off"`, so nothing else changes.
+
+**WP1 — `src/store/room.ts`** (done in integration: `sendCursor` / `ingestPing` are in):
 
 ```ts
 // RoomStore
@@ -201,13 +245,15 @@ Plan tab downloads), `hero-check` / `hero-check-late` (the §3.13 hero exports i
     },
 ```
 
-**WP1 — `tests/e2e/sync.spec.ts`** (a): after `cardB … Delivered`, assert on the DONE tab or
-within 8 s — ALL shows open + claimed by contract:
+**WP1 — `tests/e2e/sync.spec.ts`** (a) (done in integration): after `cardB … Delivered`, assert on
+the DONE tab or within 8 s — ALL shows open + claimed by contract:
 
 ```ts
--    await expect(cardA).toContainText(/delivered/i);
-+    await a.getByRole("tab", { name: /done/i }).click();
-+    await expect(a.getByRole("listitem").filter({ hasText: /fuel/i }).first()).toContainText(/delivered/i);
+-(await expect(cardA).toContainText(/delivered/i));
++(await a.getByRole("tab", { name: /done/i }).click());
++(await expect(a.getByRole("listitem").filter({ hasText: /fuel/i }).first()).toContainText(
+  /delivered/i,
+));
 ```
 
 **WP6 — home page**: `<HeroFrame><HeroStatic /></HeroFrame>` inside the 16:10 tier-3 frame with
@@ -220,9 +266,10 @@ is unaffected).
 
 ## Not done
 
-- `npm run e2e` (Phase 2, integrated build); the relay half of the journeys was not exercised
-  here (no relay running in this worktree), only LOCAL two-tab convergence.
-- `scripts/check-bundle.mjs` budgets (the script is not in this worktree).
+- `sync.spec` (b) on the Playwright config as committed: it builds without
+  `NEXT_PUBLIC_RELAY_URL`, so the CSP refuses the relay override (see the request above); (a) and
+  every other owned spec pass on that build too.
 - Browser tests for the upload pipeline and the plan load dialogs beyond manual checks; the
   squad-mode layers popover was verified by code only.
-- The landscape-phone right sheet (deviation 13) and per-viewer cursor sending (deviation 1).
+- The landscape-phone right sheet (deviation 13). Cursor sending is in (integration); the
+  per-viewer cursor _rendering_ is unchanged.
