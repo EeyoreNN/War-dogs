@@ -4,35 +4,13 @@ import { ContourBackdrop } from "@/components/site/contour-backdrop";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
+import { HeroFrame } from "@/components/map/HeroFrame";
+import { HeroStatic } from "@/components/map/HeroStatic";
 import { DiscordIcon } from "@/components/ui/icons";
-import { Skeleton } from "@/components/ui/skeleton";
 import { site } from "@/config/site";
 import { CodeField } from "./code-field";
 import { HeroFrameShell } from "./hero-frame-shell";
 import { RecentRooms } from "./RecentRooms";
-
-/**
- * Phase 1 placeholder for the map: WP3's `<HeroFrame><HeroStatic/></HeroFrame>` replaces this in
- * Phase 2 (§4.1). A skeleton, not a stand-in map.
- */
-function HeroMapPlaceholder() {
-  return (
-    <div className="absolute inset-0 flex flex-col gap-3 p-4">
-      <div className="flex gap-3">
-        <Skeleton className="h-full w-10 shrink-0 rounded-md" />
-        <Skeleton className="min-h-0 flex-1 rounded-md" />
-        <div className="hidden w-32 shrink-0 flex-col gap-2 sm:flex">
-          <Skeleton className="h-3 w-20" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-3 w-16" />
-          <Skeleton className="h-8 w-full" />
-        </div>
-      </div>
-      <span className="sr-only">Map preview loading</span>
-    </div>
-  );
-}
 
 /** Section 1 (§4.1): copy, CTAs, the code field, the rejoin card and the tier-3 map frame. */
 export function Hero() {
@@ -110,7 +88,9 @@ export function Hero() {
 
           <div className="order-1 lg:order-2">
             <HeroFrameShell>
-              <HeroMapPlaceholder />
+              <HeroFrame>
+                <HeroStatic />
+              </HeroFrame>
             </HeroFrameShell>
           </div>
         </div>

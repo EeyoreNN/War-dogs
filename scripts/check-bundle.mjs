@@ -8,7 +8,10 @@
  * file once (level 9) and sums per page. Lazy chunks are measured through their entry modules:
  * each entry renders `data-bundle="wd:<name>"` on its root element — a literal that survives
  * minification — so the entry chunk is found by that string inside `.next/static/chunks/*.js`
- * and summed with the chunks it references.
+ * and summed with the chunks it references — plus the sibling chunks named next to it in any
+ * parent's Turbopack async loader list (`Promise.all(["static/chunks/…", …].map(l))`); when
+ * several parents load the entry with different sibling sets, the largest cost is reported, not
+ * counting chunks the loading page already has in its first-load scripts.
  *
  * Exit code 1 when any route or lazy bundle is over budget. Budgets are gzip bytes.
  */
@@ -31,6 +34,7 @@ const LAZY_BUDGETS = {
   "wd:hero": 60 * KB,
   "wd:dashboard": 90 * KB,
   "wd:console": 90 * KB,
+  "wd:validator": 100 * KB,
 };
 
 /** Routes that are not (site): everything else is. */
@@ -105,7 +109,14 @@ for (const html of htmlFiles) {
   }
   const total = [...scripts].reduce((n, s) => n + gzipSize(s), 0);
   const group = groupOf(route);
-  routeRows.push({ route, group, scripts: scripts.size, total, budget: ROUTE_BUDGETS[group] });
+  routeRows.push({
+    route,
+    group,
+    scripts: scripts.size,
+    loaded: new Set([...scripts].map((sc) => join(nextDir, sc))),
+    total,
+    budget: ROUTE_BUDGETS[group],
+  });
 }
 routeRows.sort((a, b) => a.route.localeCompare(b.route));
 
@@ -131,6 +142,17 @@ function chunkGraph(entry) {
   return [...seen];
 }
 
+/** Every `["static/chunks/…", …]` array literal in any chunk (Turbopack's async loader lists). */
+const loaderList =
+  /\[\s*"static\/chunks\/[\w./-]+\.js"(?:\s*,\s*"static\/chunks\/[\w./-]+\.js")*\s*\]/g;
+const loaderLists = []; // { parent, list }
+for (const [parent, text] of chunkText) {
+  for (const m of text.matchAll(loaderList)) {
+    const list = [...m[0].matchAll(chunkRef)].map((r) => join(nextDir, r[0]));
+    if (list.length > 1 && list.every((p) => chunkText.has(p))) loaderLists.push({ parent, list });
+  }
+}
+
 const lazyRows = [];
 for (const [marker, budget] of Object.entries(LAZY_BUDGETS)) {
   const needle = `data-bundle="${marker}"`;
@@ -142,9 +164,23 @@ for (const [marker, budget] of Object.entries(LAZY_BUDGETS)) {
     lazyRows.push({ marker, budget, total: null, chunks: 0 });
     continue;
   }
-  const graph = new Set(entries.flatMap(chunkGraph));
-  const total = [...graph].reduce((n, p) => n + gzipSize(relative(nextDir, p)), 0);
-  lazyRows.push({ marker, budget, total, chunks: graph.size });
+  // Turbopack loads a dynamic import as `Promise.all(["static/chunks/a.js", …].map(l))` in the
+  // parent: the entry chunk plus its sibling chunks. Each loader list that names the entry is one
+  // way a page can pay for this bundle; report the largest (some pages share more with the shell).
+  // Chunks a page already has in its first-load scripts are not paid again by the lazy import.
+  const lists = loaderLists.filter(({ list }) => list.some((p) => entries.includes(p)));
+  const candidates = lists.length ? lists : [{ parent: null, list: [] }];
+  let best = { total: -1, chunks: 0 };
+  for (const { parent, list } of candidates) {
+    const graph = new Set([...list, ...entries].flatMap(chunkGraph));
+    const pages = routeRows.filter((r) => r.loaded.has(parent));
+    for (const loaded of pages.length ? pages.map((r) => r.loaded) : [new Set()]) {
+      const paid = [...graph].filter((p) => !loaded.has(p));
+      const total = paid.reduce((n, p) => n + gzipSize(relative(nextDir, p)), 0);
+      if (total > best.total) best = { total, chunks: paid.length };
+    }
+  }
+  lazyRows.push({ marker, budget, total: best.total, chunks: best.chunks });
 }
 
 /* ---------- report ---------- */
@@ -162,7 +198,9 @@ for (const r of routeRows) {
   );
 }
 
-console.log("\nLazy bundles (entry chunk found by data-bundle marker + referenced chunks)\n");
+console.log(
+  "\nLazy bundles (entry chunk found by data-bundle marker + its loader-list siblings + referenced chunks; largest loader list)\n",
+);
 for (const l of lazyRows) {
   if (l.total === null) {
     console.log(

@@ -74,7 +74,8 @@ are one drawing.
 ## Performance
 
 - First-load JS budgets in `scripts/check-bundle.mjs` (site routes ≤ 190 kB gzip, app/admin
-  shells ≤ 200 kB, lazy bundles measured through `data-bundle` markers). Baseline in
+  shells ≤ 200 kB, lazy bundles measured through `data-bundle` markers plus the sibling chunks
+  named in the parent's Turbopack async loader list, minus what the page already ships). Baseline in
   `scripts/bundle-baseline.json`.
 - The home page reaches no `zod`, no terrain generator, no reducer and no animation runtime; the
   "rise" entry is CSS driven by a one-line IntersectionObserver.
