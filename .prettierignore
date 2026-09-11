@@ -13,3 +13,14 @@ docs/SPEC.md
 
 # The CI workflow is copied byte-exact from the spec (§7.5); its flow-style YAML is not Prettier-formatted.
 .github/workflows/ci.yml
+src/lib/terrain/types.ts
+src/lib/map/types.ts
+src/lib/map/keys.ts
+src/lib/realtime/transport.ts
+src/config/maps.ts
+src/lib/admin-sim/types.ts
+src/content/openapi.json
+src/content/ServerSettings.ini
+
+# Verbatim relay tsconfig from the spec (§7.7).
+server/tsconfig.json
