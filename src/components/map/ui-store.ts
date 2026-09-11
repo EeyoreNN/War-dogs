@@ -4,7 +4,7 @@
 import { create } from "zustand";
 import type { SheetSnap } from "@/components/ui/sheet";
 import type { RequestFilter } from "@/lib/map/requests";
-import type { Ping, Point, RequestKind, RequestPriority } from "@/lib/map/types";
+import type { Point, RequestKind, RequestPriority } from "@/lib/map/types";
 
 export type ManageTab = "map" | "squads" | "access" | "plan" | "room";
 export type PanelTab = "requests" | "roster";
@@ -61,8 +61,6 @@ interface UiState {
   freshIds: Set<string>;
   /** The node list's "open and focus" entry point (Tab from the map, §4.3.10). */
   nodeListApi: { focus(): void } | null;
-  /** Scripted bot pings in the demo (they are not ours, so they cannot go through store.ping). */
-  demoPings: Ping[];
   viewportApi: ViewportApi | null;
   // actions
   set(patch: Partial<UiState>): void;
@@ -94,7 +92,6 @@ export const useUiStore = create<UiState>()((set, get) => ({
   moreOpen: false,
   demoChipDismissed: false,
   freshIds: new Set(),
-  demoPings: [],
   nodeListApi: null,
   viewportApi: null,
   set: (patch) => set(patch),
@@ -141,7 +138,6 @@ export function resetUiStore(): void {
     moreOpen: false,
     demoChipDismissed: false,
     freshIds: new Set(),
-    demoPings: [],
     nodeListApi: null,
     viewportApi: null,
   });

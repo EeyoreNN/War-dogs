@@ -2,7 +2,7 @@
 // with the local snapshot, a sync.request after `syncRequestMs` with no snapshot, jittered
 // snapshot replies from every holder (cancelled when another reply is seen), presence every 10 s,
 // bye on leave. Status is always "local".
-import type { Identity, Op, Presence, RoomState, SyncStatus } from "../map/types";
+import type { Identity, Op, Point, Presence, RoomState, SyncStatus } from "../map/types";
 import { createEmitter } from "./emitter";
 import { validateWire } from "./schema";
 import type {
@@ -36,6 +36,8 @@ export const BROADCAST_TIMING: PeerTiming = {
 export const MEMORY_TIMING: PeerTiming = { syncRequestMs: 0, replyJitterMs: 0, presenceMs: 10_000 };
 
 export const SEND_QUEUE_CAP = 1000;
+/** Same cadence as the ws transport: at most one cursor frame per 50 ms, trailing edge. */
+const CURSOR_THROTTLE_MS = 50;
 
 type ErrorFrame = Extract<WireMessage, { k: "error" }>;
 
@@ -64,6 +66,9 @@ export function createPeerTransport(
   let replyTimer: ReturnType<typeof setTimeout> | null = null;
   let presenceTimer: ReturnType<typeof setInterval> | null = null;
   let unsubscribeChannel: Unsubscribe | null = null;
+  let pendingCursor: Point | null | undefined;
+  let cursorTimer: ReturnType<typeof setTimeout> | null = null;
+  let lastCursorAt = 0;
 
   const post = (msg: WireMessage) => {
     if (!channel) return;
@@ -166,6 +171,15 @@ export function createPeerTransport(
     while (queue.length) post({ k: "op", room, op: queue.shift()! });
   };
 
+  const flushCursor = () => {
+    cursorTimer = null;
+    if (pendingCursor === undefined || !joined) return;
+    const at = pendingCursor;
+    pendingCursor = undefined;
+    lastCursorAt = Date.now();
+    post({ k: "cursor", room, client: identity!.client, at });
+  };
+
   const transport: Transport = {
     kind,
     get status(): SyncStatus {
@@ -203,6 +217,14 @@ export function createPeerTransport(
     },
     sendEphemeral(msg) {
       if (!joined) return;
+      if (msg.k === "cursor") {
+        // Trailing-edge throttle, like the ws transport: the last position always goes out.
+        pendingCursor = msg.at;
+        if (cursorTimer !== null) return;
+        const wait = Math.max(0, CURSOR_THROTTLE_MS - (Date.now() - lastCursorAt));
+        cursorTimer = setTimeout(flushCursor, wait);
+        return;
+      }
       post({ ...msg, room });
     },
     requestSnapshot(since) {
@@ -222,6 +244,9 @@ export function createPeerTransport(
       joined = false;
       if (syncTimer !== null) clearTimeout(syncTimer);
       syncTimer = null;
+      if (cursorTimer !== null) clearTimeout(cursorTimer);
+      cursorTimer = null;
+      pendingCursor = undefined;
       cancelReply();
       if (presenceTimer !== null) clearInterval(presenceTimer);
       presenceTimer = null;

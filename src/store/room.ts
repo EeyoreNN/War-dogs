@@ -146,6 +146,10 @@ export interface RoomStore {
   undo(): void;
   redo(): void;
   ping(at: Point): void;
+  /** Send my cursor (throttled by the transport); null when leaving the map. */
+  sendCursor(at: Point | null): void;
+  /** A ping from someone who is not me (the demo director's scripted bots). */
+  ingestPing(ping: Ping): void;
   setTool(t: Tool): void;
   setInk(c: InkColor): void;
   setMarkerKind(k: MarkerKind): void;
@@ -819,6 +823,16 @@ export const useRoomStore: UseBoundStore<StoreApi<RoomStore>> = create<RoomStore
       addPing(ping);
       set((st) => ({ activity: { ...st.activity, [ping.by]: now() } }));
       internals.transport?.sendEphemeral({ k: "ping", room: s.room, ping });
+    },
+
+    sendCursor(at) {
+      const s = get();
+      if (!s.me || !s.room) return;
+      internals.transport?.sendEphemeral({ k: "cursor", room: s.room, client: s.me.client, at });
+    },
+
+    ingestPing(ping) {
+      addPing({ ...ping, ts: now() });
     },
 
     setTool(tool) {

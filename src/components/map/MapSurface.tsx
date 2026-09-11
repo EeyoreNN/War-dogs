@@ -126,13 +126,13 @@ export function MapSurface({ className }: { className?: string }) {
   const uploadedMap = useRoomStore((s) => s.uploadedMap);
   const select = useRoomStore((s) => s.select);
   const ping = useRoomStore((s) => s.ping);
+  const sendCursor = useRoomStore((s) => s.sendCursor);
 
   const placingRequest = useUiStore((s) => s.placingRequest);
   const pingArmed = useUiStore((s) => s.pingArmed);
   const textEditor = useUiStore((s) => s.textEditor);
   const freshIds = useUiStore((s) => s.freshIds);
   const hiddenLayers = useUiStore((s) => s.hiddenLayers);
-  const demoPings = useUiStore((s) => s.demoPings);
   const uiSet = useUiStore((s) => s.set);
 
   const boxRef = React.useRef<HTMLDivElement>(null);
@@ -461,6 +461,7 @@ export function MapSurface({ className }: { className?: string }) {
   const onPointerMove = (e: React.PointerEvent) => {
     const local = toLocal(e);
     const g = gesture.current;
+    sendCursor(toWorld(local));
     if (pointers.current.has(e.pointerId)) pointers.current.set(e.pointerId, local);
     if (longPress.current && lastDown.current && distance(local, lastDown.current.p) > 8)
       clearLongPress();
@@ -850,9 +851,8 @@ export function MapSurface({ className }: { className?: string }) {
   );
   const pings = React.useMemo(() => {
     const mine = identity.client;
-    const list = showPings ? storePings : storePings.filter((p) => p.by === mine);
-    return demoPings.length ? [...list, ...demoPings] : list;
-  }, [storePings, demoPings, showPings, identity.client]);
+    return showPings ? storePings : storePings.filter((p) => p.by === mine);
+  }, [storePings, showPings, identity.client]);
   const selectedNode = selection ? (state.nodes[selection] ?? null) : null;
   const kbPreview: ToolPreview | null = React.useMemo(() => {
     if (!kb.a || !crosshair) return null;
@@ -917,6 +917,7 @@ export function MapSurface({ className }: { className?: string }) {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerCancel}
+        onPointerLeave={() => sendCursor(null)}
         onKeyDown={onKeyDown}
         onFocus={(e) => {
           if (e.target === e.currentTarget) {

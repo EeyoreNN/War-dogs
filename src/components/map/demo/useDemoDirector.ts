@@ -19,10 +19,8 @@ import {
 } from "@/lib/map/scenario";
 import { DEMO_ROOM_CODE, type Identity, type Ping } from "@/lib/map/types";
 import { now, useRoomStore } from "@/store/room";
-import { useUiStore } from "../ui-store";
 
 export const PRESENCE_MS = 10_000;
-export const DEMO_PING_MS = 4_000;
 
 export function useDemoDirector(identity: Identity | null, enabled: boolean): void {
   React.useEffect(() => {
@@ -37,16 +35,10 @@ export function useDemoDirector(identity: Identity | null, enabled: boolean): vo
       timers = [];
     };
 
+    // Bot pings are not ours, so they enter through ingestPing (the store owns their TTL).
     const firePing = (item: Extract<(typeof DEMO_TIMELINE)[number], { kind: "ping" }>) => {
       const ping: Ping = { ...item.ping, id: newId(), ts: now() };
-      useUiStore.getState().set({ demoPings: [...useUiStore.getState().demoPings, ping] });
-      timers.push(
-        setTimeout(() => {
-          useUiStore
-            .getState()
-            .set({ demoPings: useUiStore.getState().demoPings.filter((p) => p.id !== ping.id) });
-        }, DEMO_PING_MS),
-      );
+      store().ingestPing(ping);
       announce(`${item.ping.byName} pinged`);
     };
 
@@ -77,7 +69,6 @@ export function useDemoDirector(identity: Identity | null, enabled: boolean): vo
       if (idx === currentEpoch) return;
       currentEpoch = idx;
       const { state } = stateAt(t);
-      useUiStore.getState().set({ demoPings: [] });
       await store().boot({
         code: DEMO_ROOM_CODE,
         mode: "demo",
@@ -106,7 +97,6 @@ export function useDemoDirector(identity: Identity | null, enabled: boolean): vo
       clear();
       clearInterval(presence);
       document.removeEventListener("visibilitychange", onVisible);
-      useUiStore.getState().set({ demoPings: [] });
     };
   }, [enabled, identity]);
 }
