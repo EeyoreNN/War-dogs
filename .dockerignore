@@ -1,0 +1,13 @@
+# Relay image build context (server/Dockerfile): only package files, tsconfig, server/ and src/ are needed.
+node_modules
+.next
+.git
+test-results
+playwright-report
+docs
+public
+tests
+scripts
+.github
+*.md
+.env*

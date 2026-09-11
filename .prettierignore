@@ -1,0 +1,28 @@
+node_modules
+.next
+out
+coverage
+package-lock.json
+public/openapi.json
+server/dist
+# Verbatim contract files keep the spec's bytes (§3.0).
+src/lib/brand/mark.ts
+
+# The spec is read-only during the build (§8.2); nobody reformats it.
+docs/SPEC.md
+
+src/lib/terrain/types.ts
+src/lib/map/types.ts
+src/lib/map/keys.ts
+src/lib/realtime/transport.ts
+src/config/maps.ts
+src/lib/admin-sim/types.ts
+src/content/openapi.json
+src/content/ServerSettings.ini
+
+# Verbatim relay tsconfig from the spec (§7.7).
+server/tsconfig.json
+
+# Playwright output
+test-results
+playwright-report

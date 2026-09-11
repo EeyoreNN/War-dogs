@@ -1,0 +1,59 @@
+{
+  "measuredAt": "2026-09-11",
+  "how": "node scripts/check-bundle.mjs after `next build` (Next 16.3, React 19, Turbopack): module scripts referenced by the prerendered HTML, gzip level 9; the noModule polyfill chunk is not counted. Lazy bundles: the entry chunk found by its data-bundle marker plus the sibling chunks named beside it in the parent's Turbopack async loader list and everything they reference, minus the chunks the loading page already has in its first-load scripts (largest cost across parents).",
+  "scaffold": {
+    "note": "Phase 0 scaffold: fonts, header, the two-CTA hero placeholder.",
+    "/": 153600,
+    "/_not-found": 136192
+  },
+  "phase1": {
+    "note": "WP6 Phase 1: full home page (skeleton in the hero frame), legal pages. No motion runtime, no zod on the home page.",
+    "/": 156877,
+    "/terms": 158310,
+    "/privacy": 158310
+  },
+  "phase2": {
+    "note": "WP6 Phase 2 on the integrated build (WP1/WP2/WP4/WP5 merged; WP3 hero and app routes not yet): home reads @/lib/room/code + @/lib/storage/rooms, rise reveal visible-by-default. /dev (WP5) is over the site budget at 248.1 kB; the other (site) routes are 154-158 kB.",
+    "/": 157388,
+    "/terms": 158003,
+    "/privacy": 158003,
+    "/dev": 254054
+  },
+  "budgets": {
+    "site": 194560,
+    "app": 204800,
+    "admin": 204800,
+    "wd:map-app": 153600,
+    "wd:hero": 61440,
+    "wd:dashboard": 92160,
+    "wd:console": 92160,
+    "wd:validator": 102400
+  },
+  "phase3": {
+    "note": "WP6 Phase 3 on the integrated build (all six packages): real hero wired (HeroFrame + HeroStatic on /, HeroPlayer lazy as wd:hero). Lazy totals now include Turbopack loader-list siblings, which is why wd:map-app and wd:console read higher than under the entry-only walk (both carry the 87.3 kB zod chunk 2t_38bmbv53l6.js, as do the /create and /join shells).",
+    "/": 159334,
+    "/terms": 158720,
+    "/dev": 161485,
+    "/create": 262349,
+    "/join": 257331,
+    "wd:hero": 31539,
+    "wd:map-app": 182067,
+    "wd:dashboard": 23757,
+    "wd:console": 121958,
+    "wd:validator": 95232
+  },
+  "budgetsNote": "The values scripts/check-bundle.mjs enforces (LAZY_BUDGETS / ROUTE_BUDGETS), gzip bytes; kept identical by hand \u2014 a `current` block below is the last measurement.",
+  "current": {
+    "note": "Review fixes: zod's v4/locales barrel replaced by src/lib/zod-locales-stub.ts (next.config.ts turbopack.resolveAlias), fonts trimmed to the faces that render, JetBrains Mono as one variable face with preload:false. wd:map-app 177.8 \u2192 142.6 kB, wd:console 119.1 \u2192 83.9 kB, /create 256.2 \u2192 173.7 kB, /join 251.3 \u2192 167.9 kB.",
+    "/": 159232,
+    "/terms": 164147,
+    "/dev": 166912,
+    "/create": 177869,
+    "/join": 171930,
+    "wd:hero": 31539,
+    "wd:map-app": 146022,
+    "wd:dashboard": 23757,
+    "wd:console": 85914,
+    "wd:validator": 59187
+  }
+}
