@@ -11,10 +11,19 @@ import { nav, site } from "@/config/site";
 import { cn } from "@/lib/utils";
 
 export function SiteHeader({ className }: { className?: string }) {
-  const [open, setOpen] = React.useState(false);
   const pathname = usePathname();
-
-  React.useEffect(() => setOpen(false), [pathname]);
+  // The menu is "open for" a pathname; navigating away closes it without an effect.
+  const [openFor, setOpenFor] = React.useState<string | null>(null);
+  const open = openFor === pathname;
+  const setOpen = React.useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) =>
+      setOpenFor((prev) => {
+        const wasOpen = prev === pathname;
+        const willOpen = typeof next === "function" ? next(wasOpen) : next;
+        return willOpen ? pathname : null;
+      }),
+    [pathname],
+  );
 
   React.useEffect(() => {
     if (!open) return;
